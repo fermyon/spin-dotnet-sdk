@@ -12,20 +12,31 @@ Then, build and run the `hello-world` sample:
 ```
 $ cd samples/hello-world
 $ dotnet build
-$ wasmtime bin/Debug/net7.0/HelloWorld.Spin.wasm 
+$ spin up
 ```
 
-If everything worked, you should see the following error:
+If everything worked, you should see a Spin "serving routes" message:
 
 ```
-Error: failed to run main module `bin/Debug/net7.0/HelloWorld.Spin.wasm`
-
-Caused by:
-    0: failed to instantiate "bin/Debug/net7.0/HelloWorld.Spin.wasm"
-    1: unknown import: `test::test` has not been defined
+Serving http://127.0.0.1:3000
+Available Routes:
+  hello: http://127.0.0.1:3000 (wildcard)
 ```
 
-This means the function defined in the WIT file `test.wit` is correctly imported
-in .NET and a Wasm import is generated.
+You should be able to curl the address and get a response along the lines of:
 
-Next steps: TODO
+```
+$ curl -v 127.0.0.1:3000
+// outbound trace omitted
+< HTTP/1.1 200 OK
+< content-type: text/plain
+< x-testheader: this is a test
+< content-length: 451
+< date: Thu, 21 Jul 2022 03:11:15 GMT
+<
+Called with method Get on URL /
+Header 'host' had value '127.0.0.1:3000'
+// ... more headers info ...
+Header 'spin-component-route' had value ''
+The body was empty
+```

@@ -52,9 +52,13 @@ set_member_err_t set_field(MonoClass* klass, MonoObject* instance, const char* n
     return SET_MEMBER_ERR_OK;
 }
 
-void get_field(MonoClass* klass, MonoObject* instance, const char* name, void* receiver) {
+get_member_err_t get_field(MonoClass* klass, MonoObject* instance, const char* name, void* receiver) {
     MonoClassField* field = mono_class_get_field_from_name(klass, name);
+    if (!field) {
+        return GET_MEMBER_ERR_NOT_FOUND;
+    }
     mono_field_get_value(instance, field, receiver);
+    return GET_MEMBER_ERR_OK;
 }
 
 resolve_err_t find_decorated_method(MonoAssembly* assembly, const char* attr_name, MonoMethod** decorated_method) {

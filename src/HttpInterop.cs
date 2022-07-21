@@ -1,5 +1,10 @@
 namespace Fermyon.Spin.Sdk;
 
+// TODO: the idea of these types is that they're easier to convert to/from
+// WIT than the more idiomatic types exposes to user code.  But could we
+// instead work this by having one type in each direction, with WIT-friendly
+// private fields and idiomatic adapter properties, and save the complexity?
+
 internal class HttpResponseInterop
 {
     public short Status;

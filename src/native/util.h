@@ -22,8 +22,12 @@ typedef uint8_t set_member_err_t;
 set_member_err_t set_property(MonoClass* klass, MonoObject* instance, const char* name, void* value);
 set_member_err_t set_field(MonoClass* klass, MonoObject* instance, const char* name, void* value);
 
-// TODO: err
-void get_field(MonoClass* klass, MonoObject* instance, const char* name, void* receiver);
+typedef uint8_t get_member_err_t;
+
+#define GET_MEMBER_ERR_OK 0
+#define GET_MEMBER_ERR_NOT_FOUND 1
+
+get_member_err_t get_field(MonoClass* klass, MonoObject* instance, const char* name, void* receiver);
 
 typedef uint8_t resolve_err_t;
 

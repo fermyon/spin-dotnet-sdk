@@ -1,5 +1,5 @@
 spin_version = "1"
-name = "dotnet-doom"
+name = "dotnet-hello"
 trigger = { type = "http", base = "/" }
 version = "1.0.0"
 

@@ -7,6 +7,17 @@ namespace Fermyon.Spin.Sdk;
 
 internal class HttpResponseInterop
 {
+    internal HttpResponseInterop(
+        short status,
+        StringPair[] headers,
+        byte[] body
+    )
+    {
+        Status = status;
+        Headers = headers;
+        Body = body;
+    }
+    
     public short Status;
     public StringPair[] Headers;
     public byte[] Body;
@@ -14,6 +25,17 @@ internal class HttpResponseInterop
 
 internal class HttpRequestInterop
 {
+    // Used by the embedding layer which already sets the fields to
+    // safe values, but this avoids nullability warnings.
+    internal HttpRequestInterop()
+    {
+        Method = 0;
+        Uri = String.Empty;
+        Headers = Array.Empty<StringPair>();
+        Parameters = Array.Empty<StringPair>();
+        Body = Array.Empty<byte>();
+    }
+
     public byte Method;
     public string Uri;
     public StringPair[] Headers;
@@ -23,13 +45,13 @@ internal class HttpRequestInterop
     public HttpRequest Build()
     {
         // TODO: ToDictionary() crashes on duplicate key - custom safe wrapper?
-        return new HttpRequest {
-            Method = MethodOf(Method),
-            Uri = Uri,
-            Headers = Headers.ToDictionary(p => p.Key, p => p.Value), 
-            Parameters = Parameters.ToDictionary(p => p.Key, p => p.Value),
-            BodyArray = Body,
-        };
+        return new HttpRequest(
+            MethodOf(Method),
+            Uri,
+            Headers.ToDictionary(p => p.Key, p => p.Value), 
+            Parameters.ToDictionary(p => p.Key, p => p.Value),
+            Body
+        );
     }
 
     private static HttpMethod MethodOf(byte method)
@@ -50,6 +72,12 @@ internal class HttpRequestInterop
 
 internal class StringPair
 {
+    public StringPair()
+    {
+        Key = String.Empty;
+        Value = String.Empty;
+    }
+
     public string Key;
     public string Value;
 }

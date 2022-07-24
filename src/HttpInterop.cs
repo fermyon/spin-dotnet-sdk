@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -30,13 +31,13 @@ public struct HttpResponse
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct HttpRequest
+public struct HttpRequest
 {
-    public readonly HttpMethod Method;
-    public readonly HttpString Url;
-    public readonly HttpKeyValues Headers;
-    public readonly HttpKeyValues Parameters;
-    public readonly Optional<HttpBuffer> Body;
+    public HttpMethod Method;
+    public HttpString Url;
+    public HttpKeyValues Headers;
+    public HttpKeyValues Parameters;
+    public Optional<HttpBuffer> Body;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -155,4 +156,10 @@ public readonly struct HttpKeyValue
         Key = key;
         Value = value;
     }
+}
+
+internal static class OutboundHttpInterop
+{
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    internal static extern unsafe byte wasi_outbound_http_request(ref HttpRequest req, ref HttpResponse ret0);
 }

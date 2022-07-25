@@ -2,7 +2,6 @@
 generate:
 	# wit-bindgen c --export wit/ephemeral/spin-http.wit --out-dir ./src/native/
 	# wit-bindgen c --import wit/ephemeral/wasi-outbound-http.wit --out-dir ./src/native/
-	# wit-bindgen c --import wit/ephemeral/test.wit --out-dir ./src/native/
 
 .PHONY: bootstrap
 bootstrap:

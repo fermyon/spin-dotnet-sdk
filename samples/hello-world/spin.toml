@@ -1,0 +1,10 @@
+spin_version = "1"
+name = "dotnet-hello"
+trigger = { type = "http", base = "/" }
+version = "1.0.0"
+
+[[component]]
+id = "hello"
+source = "bin/Debug/net7.0/HelloWorld.Spin.wasm"
+[component.trigger]
+route = "/..."

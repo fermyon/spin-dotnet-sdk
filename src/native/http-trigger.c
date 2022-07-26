@@ -37,8 +37,8 @@ MonoArray* string_pair_array(MonoClass* pair_class, spin_http_tuple2_string_stri
     for (size_t index = 0; index < len; ++index) {
         MonoObject* pair = mono_object_new(mono_domain_get(), pair_class);
         mono_runtime_object_init(pair);
-        set_field(pair_class, pair, "Key", mono_string_new(mono_domain_get(), values[index].f0.ptr));
-        set_field(pair_class, pair, "Value", mono_string_new(mono_domain_get(), values[index].f1.ptr));
+        set_field(pair_class, pair, "Key", mono_string_new_len(mono_domain_get(), values[index].f0.ptr, values[index].f0.len));
+        set_field(pair_class, pair, "Value", mono_string_new_len(mono_domain_get(), values[index].f1.ptr, values[index].f1.len));
         mono_array_setref(array, index, pair);
     }
     return array;

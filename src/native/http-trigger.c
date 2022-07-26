@@ -270,38 +270,67 @@ spin_http_response_t internal_error(const char* message) {
     return response;
 }
 
-void spin_http_handle_http_request(spin_http_request_t *req, spin_http_response_t *ret0) {
-    dotnet_wasi_registerbundledassemblies();
-    mono_wasm_load_runtime("", 0);
+// If wizer is run on this module, these fields will be populated at build time and hence we'll be able
+// to skip loading and initializing the runtime on a per-request basis. But if wizer isn't run, we'll
+// set up the runtime separately for each request.
+const char* preinitialized_error;
+MonoMethod* preinitialized_handler;
+MonoClass* preinitialized_builder_class;
+MonoImage* preinitialized_sdk_image;
+int preinitialized_done;
 
-    MonoMethod* handler;
-    MonoClass* builder_class;
-    MonoImage* sdk_image;
-    entry_points_err_t entry_points_err = find_entry_points("Fermyon.Spin.Sdk.HttpHandlerAttribute", "HttpRequestInterop", &handler, &builder_class, &sdk_image);
-    if (entry_points_err) {
-        if (entry_points_err == EP_ERR_NO_HANDLER_METHOD) {
-            *ret0 = internal_error("Assembly does not contain a method with HttpHandlerAttribute");
-        } else {
-            *ret0 = internal_error("Internal error loading HTTP handler");
+__attribute__((export_name("wizer.initialize")))
+void ensure_preinitialized() {
+    if (!preinitialized_done) {
+        preinitialized_done = 1;
+
+        dotnet_wasi_registerbundledassemblies();
+        mono_wasm_load_runtime("", 0);
+
+        entry_points_err_t entry_points_err = find_entry_points("Fermyon.Spin.Sdk.HttpHandlerAttribute", "HttpRequestInterop", &preinitialized_handler, &preinitialized_builder_class, &preinitialized_sdk_image);
+        if (entry_points_err) {
+            if (entry_points_err == EP_ERR_NO_HANDLER_METHOD) {
+                preinitialized_error = "Assembly does not contain a method with HttpHandlerAttribute";
+            } else {
+                preinitialized_error = "Internal error loading HTTP handler";
+            }
+            return;
         }
+
+        // To warm the interpreter, we need to run the main code path that is going to execute per-request. That way the preinitialized
+        // binary is already ready to go at full speed.
+        spin_http_request_t fake_req = {
+            .method = SPIN_HTTP_METHOD_GET,
+            .uri = { (void*)'/', 1 },
+        };
+        spin_http_response_t fake_res;
+        spin_http_handle_http_request(&fake_req, &fake_res);
+    }
+}
+
+void spin_http_handle_http_request(spin_http_request_t *req, spin_http_response_t *ret0) {
+    ensure_preinitialized();
+
+    if (preinitialized_error) {
+        *ret0 = internal_error(preinitialized_error);
         return;
     }
 
     MonoObject* request_interop;
-    if (wit_request_to_interop_request(sdk_image, builder_class, req, &request_interop) != CONV_ERR_OK) {
+    if (wit_request_to_interop_request(preinitialized_sdk_image, preinitialized_builder_class, req, &request_interop) != CONV_ERR_OK) {
         *ret0 = internal_error("Internal error converting request to CLR object");
         return;
     }
 
     MonoObject* request_obj;
-    if (interop_request_to_sdk_request(builder_class, request_interop, &request_obj) != CONV_ERR_OK) {
+    if (interop_request_to_sdk_request(preinitialized_builder_class, request_interop, &request_obj) != CONV_ERR_OK) {
         *ret0 = internal_error("Internal error converting request to CLR object");
         return;
     }
 
     MonoObject* response_obj;
     MonoObject* exn;
-    call_clr_request_handler(handler, request_obj, &response_obj, &exn);
+    call_clr_request_handler(preinitialized_handler, request_obj, &response_obj, &exn);
     if (exn) {
         MonoString* exn_str = mono_object_to_string(exn, NULL);
         char* exn_cstr = mono_wasm_string_get_utf8(exn_str);

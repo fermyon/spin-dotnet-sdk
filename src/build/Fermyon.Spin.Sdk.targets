@@ -8,4 +8,13 @@
 		<WasiAfterRuntimeLoaded Include="spin_attach_internal_calls" />
 	</ItemGroup>
 
+	<!-- Wizer is only enabled if the developer explicitly opts in, because it will only work if they have the wizer binary on PATH -->
+	<!-- Consider baking wizer into spin itself so that it can generate its own preinitialized version of the .wasm modules during startup -->
+	<Target Name="RunWizer" AfterTargets="CopyWasmToOutput" Condition="$(UseWizer) == 'true'">
+		<Message Importance="high" Text="Running wizer to preinitialize @(WasiSdkBinOutputFiles)..." />
+		<Exec Command="wizer @(WasiSdkBinOutputFiles) -o @(WasiSdkBinOutputFiles).pre.wasm --allow-wasi" />
+		<Delete Files="@(WasiSdkBinOutputFiles)" />
+		<Move SourceFiles="@(WasiSdkBinOutputFiles->'%(Identity).pre.wasm')" DestinationFiles="@(WasiSdkBinOutputFiles)" />
+	</Target>
+
 </Project>

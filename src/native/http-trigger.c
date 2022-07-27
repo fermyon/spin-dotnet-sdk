@@ -252,11 +252,12 @@ conversion_err_t interop_response_to_wit_response(MonoObject* response_obj, spin
     return CONV_ERR_OK;
 }
 
-void call_clr_request_handler(MonoMethod* handler, MonoObject* request_obj, MonoObject** response_obj, MonoObject** exn) {
+void call_clr_request_handler(MonoMethod* handler, spin_http_request_t* req, MonoObject* request_obj, MonoObject** response_obj, MonoObject** exn) {
     *exn = NULL;
 
-    void *params[1];
+    void *params[2];
     params[0] = request_obj;
+    params[1] = req;
     *response_obj = mono_wasm_invoke_method(handler, NULL, params, exn);
 }
 
@@ -302,6 +303,8 @@ void ensure_preinitialized() {
         spin_http_request_t fake_req = {
             .method = SPIN_HTTP_METHOD_GET,
             .uri = { (void*)'/', 1 },
+            .headers = { .len = 0 },
+            .params = {.len = 0 },
         };
         spin_http_response_t fake_res;
         spin_http_handle_http_request(&fake_req, &fake_res);
@@ -330,7 +333,7 @@ void spin_http_handle_http_request(spin_http_request_t *req, spin_http_response_
 
     MonoObject* response_obj;
     MonoObject* exn;
-    call_clr_request_handler(preinitialized_handler, request_obj, &response_obj, &exn);
+    call_clr_request_handler(preinitialized_handler, req, request_obj, &response_obj, &exn);
     if (exn) {
         MonoString* exn_str = mono_object_to_string(exn, NULL);
         char* exn_cstr = mono_wasm_string_get_utf8(exn_str);

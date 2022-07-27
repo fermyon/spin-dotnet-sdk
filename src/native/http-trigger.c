@@ -79,8 +79,10 @@ void ensure_preinitialized() {
         spin_http_request_t fake_req = {
             .method = SPIN_HTTP_METHOD_GET,
             .uri = { (void*)'/', 1 },
-            .headers = { .len = 0 },
-            .params = {.len = 0 },
+            .headers = {.len = 1, .ptr = (spin_http_tuple2_string_string_t[]){{
+                {"key", 3}, {"val", 3}
+            }}},
+            .body = { .is_some = 1, .val = { (void*)"Hello", 5 } }
         };
         spin_http_response_t fake_res;
         spin_http_handle_http_request(&fake_req, &fake_res);

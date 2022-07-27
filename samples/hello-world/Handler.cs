@@ -20,9 +20,8 @@ public static class Handler
             "The body was empty\n";
 
         var responseBody = String.Join("\n", new[] { requestInfo, headerInfo, parameterInfo, bodyInfo });
-        var m = new Utf8StringMarshaller(responseBody);
         witResponse->Status = 201;
-        witResponse->Body = new WitOptionalBuffer(new WitBuffer { _length = 20, _ptr = m.ToNativeValue() });
+        witResponse->Body = new WitOptionalBuffer(WitBuffer.StringAsUtf8(responseBody));
         /*
         return new WitResponse
         {
@@ -74,6 +73,15 @@ public unsafe struct WitBuffer
     public int _length;
 
     public ReadOnlySpan<byte> AsSpan() => new ReadOnlySpan<byte>(_ptr, _length);
+
+    public static WitBuffer StringAsUtf8(string value)
+    {
+        var exactByteCount = checked(Encoding.UTF8.GetByteCount(value));
+        var mem = (byte*)Marshal.AllocHGlobal(exactByteCount);
+        var buffer = new Span<byte>(mem, exactByteCount);
+        int byteCount = Encoding.UTF8.GetBytes(value, buffer);
+        return new WitBuffer { _ptr = mem, _length = byteCount };
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -98,7 +106,7 @@ public unsafe struct WitString
     int _utf8Length;
 
     public override string ToString()
-        => Encoding.UTF8.GetString(_utf8Ptr, _utf8Length);
+        => Marshal.PtrToStringUTF8((nint)_utf8Ptr, _utf8Length);
 }
 
 [StructLayout(LayoutKind.Sequential)]

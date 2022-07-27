@@ -1,6 +1,5 @@
 ﻿using Fermyon.Spin.Sdk;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 
 namespace Fermyon.Spin.HelloWorld;
@@ -15,24 +14,18 @@ public static class Handler
         var headerInfo = String.Join("\n", witRequest->Headers.ToEnumerable().Select(p => $"Header '{p.Key}' had value '{p.Value}'"));
         var parameterInfo = String.Join("\n", witRequest->Parameters.ToEnumerable().Select(p => $"Parameter '{p.Key}' had value '{p.Value}'"));
 
-        var bodyInfo = witRequest->Body.Value is WitBuffer bodyBuffer ?
+        var bodyInfo = witRequest->Body.TryGetValue(out var bodyBuffer) ?
             $"The body (as a string) was: {Encoding.UTF8.GetString(bodyBuffer.AsSpan())}\n" :
             "The body was empty\n";
 
         var responseBody = String.Join("\n", new[] { requestInfo, headerInfo, parameterInfo, bodyInfo });
-        witResponse->Status = 201;
-        witResponse->Body = new WitOptionalBuffer(WitBuffer.StringAsUtf8(responseBody));
-        /*
-        return new WitResponse
+        witResponse->Status = 200;
+        witResponse->Headers = WitOptional.From(WitKeyValues.FromDictionary(new Dictionary<string, string>
         {
-            Status = 201,
-            Headers = new Dictionary<string, string> {
-                { "Content-Type", "text/plain" },
-                { "X-TestHeader", "this is a test" },
-            },
-            Body = Encoding.UTF8.GetBytes(responseBody),
-        };
-        */
+            { "Content-Type", "text/plain" },
+            { "X-TestHeader", "this is a test" },
+        }));
+        witResponse->Body = WitOptional.From(WitBuffer.StringAsUtf8(responseBody));
     }
 }
 
@@ -51,9 +44,8 @@ public enum HttpMethod : byte
 public struct WitResponse
 {
     public int Status;
-    public byte HasHeaders;
-    public WitKeyValues Headers;
-    public WitOptionalBuffer Body;
+    public WitOptional<WitKeyValues> Headers;
+    public WitOptional<WitBuffer> Body;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -63,7 +55,7 @@ public struct WitRequest
     public WitString Url;
     public WitKeyValues Headers;
     public WitKeyValues Parameters;
-    public WitOptionalBuffer Body;
+    public WitOptional<WitBuffer> Body;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -85,18 +77,23 @@ public unsafe struct WitBuffer
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct WitOptionalBuffer
+public struct WitOptional<T>
 {
-    private byte _isSome;
-    private WitBuffer _value;
+    internal byte _isSome;
+    internal T _value;
 
-    public WitBuffer? Value => _isSome == 0 ? default : _value;
-
-    public WitOptionalBuffer(WitBuffer? Value)
+    public bool TryGetValue(out T value)
     {
-        _isSome = Value.HasValue ? (byte)1 : (byte)0;
-        _value = Value.GetValueOrDefault();
+        value = _value;
+        return _isSome != 0;
     }
+
+    public WitOptional<T> None => default;
+}
+
+public static class WitOptional
+{
+    public static WitOptional<T> From<T>(T value) => new WitOptional<T> { _isSome = 1, _value = value };
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -107,6 +104,12 @@ public unsafe struct WitString
 
     public override string ToString()
         => Marshal.PtrToStringUTF8((nint)_utf8Ptr, _utf8Length);
+
+    public static WitString FromString(string value)
+    {
+        var buffer = WitBuffer.StringAsUtf8(value);
+        return new WitString { _utf8Ptr = buffer._ptr, _utf8Length = buffer._length };
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -114,6 +117,19 @@ public unsafe struct WitKeyValues
 {
     public WitKeyValue* _valuesPtr;
     public int _valuesLen;
+
+    public static WitKeyValues FromDictionary(Dictionary<string, string> dictionary)
+    {
+        var unmanagedValues = (WitKeyValue*)Marshal.AllocHGlobal(dictionary.Count * sizeof(WitKeyValue));
+        var currentPtr = unmanagedValues;
+        foreach (var (key, value) in dictionary)
+        {
+            currentPtr->Key = WitString.FromString(key);
+            currentPtr->Value = WitString.FromString(value);
+            currentPtr++;
+        }
+        return new WitKeyValues { _valuesPtr = unmanagedValues, _valuesLen = dictionary.Count };
+    }
 
     public IEnumerable<KeyValuePair<string, string>> ToEnumerable()
     {

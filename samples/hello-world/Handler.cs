@@ -1,5 +1,6 @@
 ﻿using Fermyon.Spin.Sdk;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 
 namespace Fermyon.Spin.HelloWorld;
@@ -7,7 +8,7 @@ namespace Fermyon.Spin.HelloWorld;
 public static class Handler
 {
     [HttpHandler]
-    public static unsafe HttpResponse HandleHttpRequest(WitRequest* witRequest)
+    public static unsafe void HandleHttpRequest(WitRequest* witRequest, WitResponse* witResponse)
     {
         var requestInfo = $"Called with method {witRequest->Method}, Url {witRequest->Url}";
 
@@ -19,15 +20,20 @@ public static class Handler
             "The body was empty\n";
 
         var responseBody = String.Join("\n", new[] { requestInfo, headerInfo, parameterInfo, bodyInfo });
-
-        return new HttpResponse {
-            Status = 200,
+        var m = new Utf8StringMarshaller(responseBody);
+        witResponse->Status = 201;
+        witResponse->Body = new WitOptionalBuffer(new WitBuffer { _length = 20, _ptr = m.ToNativeValue() });
+        /*
+        return new WitResponse
+        {
+            Status = 201,
             Headers = new Dictionary<string, string> {
                 { "Content-Type", "text/plain" },
                 { "X-TestHeader", "this is a test" },
             },
             Body = Encoding.UTF8.GetBytes(responseBody),
         };
+        */
     }
 }
 
@@ -40,6 +46,15 @@ public enum HttpMethod : byte
     Patch = 4,
     Head = 5,
     Options = 6,
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct WitResponse
+{
+    public int Status;
+    public byte HasHeaders;
+    public WitKeyValues Headers;
+    public WitOptionalBuffer Body;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -68,6 +83,12 @@ public struct WitOptionalBuffer
     private WitBuffer _value;
 
     public WitBuffer? Value => _isSome == 0 ? default : _value;
+
+    public WitOptionalBuffer(WitBuffer? Value)
+    {
+        _isSome = Value.HasValue ? (byte)1 : (byte)0;
+        _value = Value.GetValueOrDefault();
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]

@@ -19,48 +19,6 @@ const char* dotnet_wasi_getentrypointassemblyname();
 const char* dotnet_wasi_getbundledfile(const char* name, int* out_length);
 void dotnet_wasi_registerbundledassemblies();
 
-set_member_err_t set_property(MonoClass* klass, MonoObject* instance, const char* name, void* value) {
-    MonoProperty* prop = mono_class_get_property_from_name(klass, name);
-    if (!prop) {
-        return SET_MEMBER_ERR_NOT_FOUND;
-    }
-    MonoMethod* setter = mono_property_get_set_method(prop);
-    if (!setter) {
-        return SET_MEMBER_ERR_READONLY;
-    }
-
-    MonoObject* exn = NULL;
-    void* args[1];
-    args[0] = value;
-    mono_wasm_invoke_method(setter, instance, args, &exn);
-
-    mono_free(prop);
-    mono_free(setter);
-
-    if (exn) {
-        return SET_MEMBER_ERR_EXCEPTION;
-    }
-    return SET_MEMBER_ERR_OK;
-}
-
-set_member_err_t set_field(MonoClass* klass, MonoObject* instance, const char* name, void* value) {
-    MonoClassField* field = mono_class_get_field_from_name(klass, name);
-    if (!field) {
-        return SET_MEMBER_ERR_NOT_FOUND;
-    }
-    mono_field_set_value(instance, field, value);
-    return SET_MEMBER_ERR_OK;
-}
-
-get_member_err_t get_field(MonoClass* klass, MonoObject* instance, const char* name, void* receiver) {
-    MonoClassField* field = mono_class_get_field_from_name(klass, name);
-    if (!field) {
-        return GET_MEMBER_ERR_NOT_FOUND;
-    }
-    mono_field_get_value(instance, field, receiver);
-    return GET_MEMBER_ERR_OK;
-}
-
 resolve_err_t find_decorated_method(MonoAssembly* assembly, const char* attr_name, MonoMethod** decorated_method) {
     MonoImage* image = mono_assembly_get_image(assembly);
     if (!image) {

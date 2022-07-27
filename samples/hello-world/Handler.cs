@@ -1,6 +1,4 @@
 ﻿using Fermyon.Spin.Sdk;
-using System.Collections.Specialized;
-using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -14,12 +12,13 @@ public static class Handler
         var requestInfo = $"Called with method {witRequest->Method}, Url {witRequest->Url}";
 
         var headerInfo = String.Join("\n", witRequest->Headers.ToEnumerable().Select(p => $"Header '{p.Key}' had value '{p.Value}'"));
-        /*
-        var bodyInfo = r.Body.Length > 0 ?
-            $"The body (as a string) was: {System.Text.Encoding.UTF8.GetString(r.Body)}\n" :
+        var parameterInfo = String.Join("\n", witRequest->Parameters.ToEnumerable().Select(p => $"Parameter '{p.Key}' had value '{p.Value}'"));
+
+        var bodyInfo = witRequest->Body.Value is WitBuffer bodyBuffer ?
+            $"The body (as a string) was: {Encoding.UTF8.GetString(bodyBuffer.AsSpan())}\n" :
             "The body was empty\n";
-        */
-        var responseBody = String.Join("\n", new[] { requestInfo, headerInfo });
+
+        var responseBody = String.Join("\n", new[] { requestInfo, headerInfo, parameterInfo, bodyInfo });
 
         return new HttpResponse {
             Status = 200,
@@ -27,7 +26,7 @@ public static class Handler
                 { "Content-Type", "text/plain" },
                 { "X-TestHeader", "this is a test" },
             },
-            Body = System.Text.Encoding.UTF8.GetBytes(responseBody),
+            Body = Encoding.UTF8.GetBytes(responseBody),
         };
     }
 }
@@ -49,6 +48,26 @@ public struct WitRequest
     public HttpMethod Method;
     public WitString Url;
     public WitKeyValues Headers;
+    public WitKeyValues Parameters;
+    public WitOptionalBuffer Body;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct WitBuffer
+{
+    public byte* _ptr;
+    public int _length;
+
+    public ReadOnlySpan<byte> AsSpan() => new ReadOnlySpan<byte>(_ptr, _length);
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct WitOptionalBuffer
+{
+    private byte _isSome;
+    private WitBuffer _value;
+
+    public WitBuffer? Value => _isSome == 0 ? default : _value;
 }
 
 [StructLayout(LayoutKind.Sequential)]

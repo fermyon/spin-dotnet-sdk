@@ -11,12 +11,12 @@ public static class Handler
         var response = new StringBuilder();
         response.AppendLine($"Called with method {witRequest.Method}, Url {witRequest.Url.ToString()}");
 
-        foreach (var h in witRequest.Headers.ToCollection())
+        foreach (var h in witRequest.Headers.AsSpan())
         {
             response.AppendLine($"Header '{h.Key}' had value '{h.Value}'");
         }
 
-        foreach (var p in witRequest.Parameters.ToCollection())
+        foreach (var p in witRequest.Parameters.AsSpan())
         {
             response.AppendLine($"Parameter '{p.Key}' had value '{p.Value}'");
         }

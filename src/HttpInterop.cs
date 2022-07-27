@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -33,17 +34,23 @@ public readonly struct HttpRequest
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct HttpBuffer
+public readonly struct HttpBuffer
 {
-    private nint _ptr;
-    private int _length;
+    private readonly nint _ptr;
+    private readonly int _length;
+
+    private HttpBuffer(nint ptr, int length)
+    {
+        _ptr = ptr;
+        _length = length;
+    }
 
     public unsafe ReadOnlySpan<byte> AsSpan() => new ReadOnlySpan<byte>((void*)_ptr, _length);
 
     public static unsafe HttpBuffer FromString(string value)
     {
         var httpString = HttpString.FromString(value);
-        return new HttpBuffer { _ptr = httpString._utf8Ptr, _length = httpString._utf8Length };
+        return new HttpBuffer(httpString._utf8Ptr, httpString._utf8Length);
     }
 }
 
@@ -111,7 +118,7 @@ public unsafe readonly struct HttpKeyValues
         _valuesLen = length;
     }
 
-    public static HttpKeyValues FromDictionary(Dictionary<string, string> dictionary)
+    public static HttpKeyValues FromDictionary(IReadOnlyDictionary<string, string> dictionary)
     {
         var unmanagedValues = (WitKeyValue*)Marshal.AllocHGlobal(dictionary.Count * sizeof(WitKeyValue));
         var span = new Span<WitKeyValue>(unmanagedValues, dictionary.Count);
@@ -124,16 +131,8 @@ public unsafe readonly struct HttpKeyValues
         return new HttpKeyValues(unmanagedValues, dictionary.Count);
     }
 
-    public IReadOnlyCollection<KeyValuePair<string, string>> ToCollection()
-    {
-        var result = new List<KeyValuePair<string, string>>();
-        foreach (var entry in new Span<WitKeyValue>(_valuesPtr, _valuesLen))
-        {
-            result.Add(KeyValuePair.Create(entry.Key.ToString(), entry.Value.ToString()));
-        }
-
-        return result;
-    }
+    public Span<WitKeyValue> AsSpan()
+        => new Span<WitKeyValue>(_valuesPtr, _valuesLen);
 }
 
 [StructLayout(LayoutKind.Sequential)]

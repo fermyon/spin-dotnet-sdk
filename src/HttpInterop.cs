@@ -118,10 +118,10 @@ public readonly struct HttpString
 [StructLayout(LayoutKind.Sequential)]
 public unsafe readonly struct HttpKeyValues
 {
-    private readonly WitKeyValue* _valuesPtr;
+    private readonly HttpKeyValue* _valuesPtr;
     private readonly int _valuesLen;
 
-    internal HttpKeyValues(WitKeyValue* ptr, int length)
+    internal HttpKeyValues(HttpKeyValue* ptr, int length)
     {
         _valuesPtr = ptr;
         _valuesLen = length;
@@ -129,28 +129,28 @@ public unsafe readonly struct HttpKeyValues
 
     public static HttpKeyValues FromDictionary(IReadOnlyDictionary<string, string> dictionary)
     {
-        var unmanagedValues = (WitKeyValue*)Marshal.AllocHGlobal(dictionary.Count * sizeof(WitKeyValue));
-        var span = new Span<WitKeyValue>(unmanagedValues, dictionary.Count);
+        var unmanagedValues = (HttpKeyValue*)Marshal.AllocHGlobal(dictionary.Count * sizeof(HttpKeyValue));
+        var span = new Span<HttpKeyValue>(unmanagedValues, dictionary.Count);
         var index = 0;
         foreach (var (key, value) in dictionary)
         {
-            span[index] = new WitKeyValue(HttpString.FromString(key), HttpString.FromString(value));
+            span[index] = new HttpKeyValue(HttpString.FromString(key), HttpString.FromString(value));
             index++;
         }
         return new HttpKeyValues(unmanagedValues, dictionary.Count);
     }
 
-    public Span<WitKeyValue> AsSpan()
-        => new Span<WitKeyValue>(_valuesPtr, _valuesLen);
+    public Span<HttpKeyValue> AsSpan()
+        => new Span<HttpKeyValue>(_valuesPtr, _valuesLen);
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct WitKeyValue
+public readonly struct HttpKeyValue
 {
     public readonly HttpString Key;
     public readonly HttpString Value;
 
-    internal WitKeyValue(HttpString key, HttpString value)
+    internal HttpKeyValue(HttpString key, HttpString value)
     {
         Key = key;
         Value = value;

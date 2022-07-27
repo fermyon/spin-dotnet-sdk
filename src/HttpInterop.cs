@@ -15,21 +15,21 @@ public enum HttpMethod : byte
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct WitResponse
+public ref struct WitResponse
 {
-    public int Status { get; set; }
+    public int Status;
     public WitOptional<WitKeyValues> Headers;
     public WitOptional<WitBuffer> Body;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct WitRequest
+public readonly ref struct WitRequest
 {
-    public HttpMethod Method;
-    public WitString Url;
-    public WitKeyValues Headers;
-    public WitKeyValues Parameters;
-    public WitOptional<WitBuffer> Body;
+    public readonly HttpMethod Method;
+    public readonly WitString Url;
+    public readonly WitKeyValues Headers;
+    public readonly WitKeyValues Parameters;
+    public readonly WitOptional<WitBuffer> Body;
 }
 
 [StructLayout(LayoutKind.Sequential)]

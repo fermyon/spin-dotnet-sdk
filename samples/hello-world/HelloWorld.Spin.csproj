@@ -9,7 +9,6 @@
     <RootNamespace>hello_world</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <UseWizer>true</UseWizer>
   </PropertyGroup>
 

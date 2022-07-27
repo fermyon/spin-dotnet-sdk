@@ -1,83 +1,127 @@
+using System.Runtime.InteropServices;
+using System.Text;
+
 namespace Fermyon.Spin.Sdk;
 
-// TODO: the idea of these types is that they're easier to convert to/from
-// WIT than the more idiomatic types exposes to user code.  But could we
-// instead work this by having one type in each direction, with WIT-friendly
-// private fields and idiomatic adapter properties, and save the complexity?
-
-internal class HttpResponseInterop
+public enum HttpMethod : byte
 {
-    internal HttpResponseInterop(
-        short status,
-        StringPair[] headers,
-        byte[] body
-    )
-    {
-        Status = status;
-        Headers = headers;
-        Body = body;
-    }
-    
-    public short Status;
-    public StringPair[] Headers;
-    public byte[] Body;
+    Get = 0,
+    Post = 1,
+    Put = 2,
+    Delete = 3,
+    Patch = 4,
+    Head = 5,
+    Options = 6,
 }
 
-internal class HttpRequestInterop
+[StructLayout(LayoutKind.Sequential)]
+public struct WitResponse
 {
-    // Used by the embedding layer which already sets the fields to
-    // safe values, but this avoids nullability warnings.
-    internal HttpRequestInterop()
+    public int Status { get; set; }
+    public WitOptional<WitKeyValues> Headers;
+    public WitOptional<WitBuffer> Body;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct WitRequest
+{
+    public HttpMethod Method;
+    public WitString Url;
+    public WitKeyValues Headers;
+    public WitKeyValues Parameters;
+    public WitOptional<WitBuffer> Body;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct WitBuffer
+{
+    public byte* _ptr;
+    public int _length;
+
+    public ReadOnlySpan<byte> AsSpan() => new ReadOnlySpan<byte>(_ptr, _length);
+
+    public static WitBuffer StringAsUtf8(string value)
     {
-        Method = 0;
-        Uri = String.Empty;
-        Headers = Array.Empty<StringPair>();
-        Parameters = Array.Empty<StringPair>();
-        Body = Array.Empty<byte>();
+        var exactByteCount = checked(Encoding.UTF8.GetByteCount(value));
+        var mem = (byte*)Marshal.AllocHGlobal(exactByteCount);
+        var buffer = new Span<byte>(mem, exactByteCount);
+        int byteCount = Encoding.UTF8.GetBytes(value, buffer);
+        return new WitBuffer { _ptr = mem, _length = byteCount };
+    }
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct WitOptional<T>
+{
+    internal byte _isSome;
+    internal T _value;
+
+    public bool TryGetValue(out T value)
+    {
+        value = _value;
+        return _isSome != 0;
     }
 
-    public byte Method;
-    public string Uri;
-    public StringPair[] Headers;
-    public StringPair[] Parameters;
-    public byte[] Body;
+    public WitOptional<T> None => default;
+}
 
-    public HttpRequest Build()
+public static class WitOptional
+{
+    public static WitOptional<T> From<T>(T value) => new WitOptional<T> { _isSome = 1, _value = value };
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct WitString
+{
+    byte* _utf8Ptr;
+    int _utf8Length;
+
+    public override string ToString()
+        => Marshal.PtrToStringUTF8((nint)_utf8Ptr, _utf8Length);
+
+    public static WitString FromString(string value)
     {
-        // TODO: ToDictionary() crashes on duplicate key - custom safe wrapper?
-        return new HttpRequest(
-            MethodOf(Method),
-            Uri,
-            Headers.ToDictionary(p => p.Key, p => p.Value), 
-            Parameters.ToDictionary(p => p.Key, p => p.Value),
-            Body
-        );
+        var buffer = WitBuffer.StringAsUtf8(value);
+        return new WitString { _utf8Ptr = buffer._ptr, _utf8Length = buffer._length };
     }
+}
 
-    private static HttpMethod MethodOf(byte method)
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct WitKeyValues
+{
+    public WitKeyValue* _valuesPtr;
+    public int _valuesLen;
+
+    public static WitKeyValues FromDictionary(Dictionary<string, string> dictionary)
     {
-        // Numeric values MUST be kept in sync with the WIT
-        switch (method) {
-            case 0: return HttpMethod.Get;
-            case 1: return HttpMethod.Post;
-            case 2: return HttpMethod.Put;
-            case 3: return HttpMethod.Delete;
-            case 4: return HttpMethod.Patch;
-            case 5: return HttpMethod.Head;
-            case 6: return HttpMethod.Options;
-            default: throw new ArgumentOutOfRangeException(nameof(method));
+        var unmanagedValues = (WitKeyValue*)Marshal.AllocHGlobal(dictionary.Count * sizeof(WitKeyValue));
+        var currentPtr = unmanagedValues;
+        foreach (var (key, value) in dictionary)
+        {
+            currentPtr->Key = WitString.FromString(key);
+            currentPtr->Value = WitString.FromString(value);
+            currentPtr++;
         }
+        return new WitKeyValues { _valuesPtr = unmanagedValues, _valuesLen = dictionary.Count };
+    }
+
+    public IEnumerable<KeyValuePair<string, string>> ToEnumerable()
+    {
+        var result = new List<KeyValuePair<string, string>>();
+        WitKeyValue* entry = _valuesPtr;
+        for (var i = 0; i < _valuesLen; i++)
+        {
+            result.Add(KeyValuePair.Create(entry->Key.ToString(), entry->Value.ToString()));
+            entry++;
+        }
+
+        return result;
     }
 }
 
-internal class StringPair
+[StructLayout(LayoutKind.Sequential)]
+public struct WitKeyValue
 {
-    public StringPair()
-    {
-        Key = String.Empty;
-        Value = String.Empty;
-    }
-
-    public string Key;
-    public string Value;
+    public WitString Key;
+    public WitString Value;
 }

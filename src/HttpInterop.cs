@@ -21,6 +21,12 @@ public struct HttpResponse
     public int Status;
     public Optional<HttpKeyValues> Headers;
     public Optional<HttpBuffer> Body;
+
+    public string? BodyAsString
+    {
+        get => Body.TryGetValue(out var buffer) ? buffer.ToHttpString().ToString() : null;
+        set => Body = value is null ? Optional<HttpBuffer>.None : Optional.From(HttpBuffer.FromString(value));
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -52,6 +58,9 @@ public readonly struct HttpBuffer
         var httpString = HttpString.FromString(value);
         return new HttpBuffer(httpString._utf8Ptr, httpString._utf8Length);
     }
+
+    internal HttpString ToHttpString()
+        => new HttpString(_ptr, _length);
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -75,7 +84,7 @@ public readonly struct Optional<T>
     public static readonly Optional<T> None = default;
 }
 
-public static class WitOptional
+public static class Optional
 {
     // Just so the caller doesn't have to specify <T>
     public static Optional<T> From<T>(T value) => new Optional<T>(value);

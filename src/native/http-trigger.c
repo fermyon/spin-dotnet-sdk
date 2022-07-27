@@ -85,7 +85,7 @@ void ensure_preinitialized() {
         // binary is already ready to go at full speed.
         spin_http_request_t fake_req = {
             .method = SPIN_HTTP_METHOD_GET,
-            .uri = { (void*)'/', 1 },
+            .uri = { "/info", 5 },
             .headers = {.len = 1, .ptr = (spin_http_tuple2_string_string_t[]){{
                 {"key", 3}, {"val", 3}
             }}},
@@ -122,7 +122,10 @@ void spin_http_handle_http_request(spin_http_request_t *req, spin_http_response_
     char* end_time_string;
     int end_time_string_len = asprintf(&end_time_string, "%f ms", (end_time - start_time) / 1000.0);
     int num_headers = ++resp.headers.val.len;
-    resp.headers.val.ptr = realloc(resp.headers.val.ptr, num_headers * sizeof(spin_http_tuple2_string_string_t));
+    resp.headers.val.ptr = resp.headers.is_some
+        ? realloc(resp.headers.val.ptr, num_headers * sizeof(spin_http_tuple2_string_string_t))
+        : malloc(num_headers * sizeof(spin_http_tuple2_string_string_t));
+    resp.headers.is_some = 1;
     resp.headers.val.ptr[num_headers - 1] = (spin_http_tuple2_string_string_t){
         {end_time_header_name, strlen(end_time_header_name)},
         {end_time_string, end_time_string_len}

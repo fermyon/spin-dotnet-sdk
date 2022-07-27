@@ -9,15 +9,17 @@ namespace Fermyon.Spin.HelloWorld;
 public static class Handler
 {
     [HttpHandler]
-    public static unsafe HttpResponse HandleHttpRequest(HttpRequest r, WitRequest* witRequest)
+    public static unsafe HttpResponse HandleHttpRequest(WitRequest* witRequest)
     {
-        var requestInfo = $"Called with method {r.Method} on URL {r.Uri} and witRequest Method {witRequest->Method}, Url {witRequest->Url}";
+        var requestInfo = $"Called with method {witRequest->Method}, Url {witRequest->Url}";
 
         var headerInfo = String.Join("\n", witRequest->Headers.ToEnumerable().Select(p => $"Header '{p.Key}' had value '{p.Value}'"));
+        /*
         var bodyInfo = r.Body.Length > 0 ?
             $"The body (as a string) was: {System.Text.Encoding.UTF8.GetString(r.Body)}\n" :
             "The body was empty\n";
-        var responseBody = String.Join("\n", new[] { requestInfo, headerInfo, bodyInfo });
+        */
+        var responseBody = String.Join("\n", new[] { requestInfo, headerInfo });
 
         return new HttpResponse {
             Status = 200,

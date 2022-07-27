@@ -49,6 +49,6 @@ typedef uint8_t entry_points_err_t;
 #define EP_ERR_NO_PARAM_TYPE 6
 #define EP_ERR_NO_SDK_IMAGE 7
 
-entry_points_err_t find_entry_points(const char* attr_name, const char* interop_helper_name, MonoMethod** handler, MonoClass** interop_helper_class, MonoImage** sdk_dll_image);
+entry_points_err_t find_entry_points(const char* attr_name, const char* interop_helper_name, MonoMethod** handler);
 
 #endif

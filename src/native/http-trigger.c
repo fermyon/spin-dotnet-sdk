@@ -58,71 +58,6 @@ MonoArray* body_array(spin_http_option_body_t* body) {
 
 // Main application object conversion
 
-conversion_err_t wit_request_to_interop_request(MonoImage* sdk_image, MonoClass* builder_class, spin_http_request_t *req, MonoObject** interop_request) {
-    MonoObject* builder = mono_object_new(mono_domain_get(), builder_class);
-    if (!builder) {
-        return CONV_ERR_CONVERSION_NOT_FOUND;
-    }
-    mono_runtime_object_init(builder);
-
-    MonoClass* pair_class = mono_class_from_name(sdk_image, "Fermyon.Spin.Sdk", "StringPair");
-    if (!pair_class) {
-        return CONV_ERR_CONVERSION_NOT_FOUND;
-    }
-
-    set_member_err_t set_err;
-
-    set_err = set_field(builder_class, builder, "Method", &(req->method));
-    if (set_err) {
-        return CONV_ERR_SETTER_ERR;
-    }
-
-    MonoString* uri_value = mono_string_new(mono_domain_get(), req->uri.ptr);
-    set_err = set_field(builder_class, builder, "Uri", uri_value);
-    if (set_err) {
-        return CONV_ERR_SETTER_ERR;
-    }
-
-    MonoArray* header_value = string_pair_array(pair_class, req->headers.ptr, req->headers.len);
-    set_err = set_field(builder_class, builder, "Headers", header_value);
-    if (set_err) {
-        return CONV_ERR_SETTER_ERR;
-    }
-
-    MonoArray* params_value = string_pair_array(pair_class, req->params.ptr, req->params.len);
-    set_err = set_field(builder_class, builder, "Parameters", params_value);
-    if (set_err) {
-        return CONV_ERR_SETTER_ERR;
-    }
-
-    MonoArray* body_value = body_array(&req->body);
-    set_err = set_field(builder_class, builder, "Body", body_value);
-    if (set_err) {
-        return CONV_ERR_SETTER_ERR;
-    }
-
-    *interop_request = builder;
-    return CONV_ERR_OK;
-}
-
-conversion_err_t interop_request_to_sdk_request(MonoClass* builder_class, MonoObject* builder, MonoObject** request_obj) {
-    MonoMethod* build_method = mono_class_get_method_from_name(builder_class, "Build", 0);
-    if (!build_method) {
-        return CONV_ERR_CONVERSION_NOT_FOUND;
-    }
-
-    MonoObject* exn;
-    MonoObject* request_instance = mono_wasm_invoke_method(build_method, builder, NULL, &exn);
-    if (exn) {
-        return CONV_ERR_CONVERSION_EXCEPTION;
-    }
-    if (!request_instance) {
-        return CONV_ERR_NULL;
-    }
-    *request_obj = request_instance;
-    return CONV_ERR_OK;
-}
-
 conversion_err_t sdk_response_to_interop_response(MonoObject* resp, MonoObject** response_interop) {
     MonoClass* resp_class = mono_object_get_class(resp);
     if (!resp_class) {
@@ -252,12 +187,11 @@ conversion_err_t interop_response_to_wit_response(MonoObject* response_obj, spin
     return CONV_ERR_OK;
 }
 
-void call_clr_request_handler(MonoMethod* handler, spin_http_request_t* req, MonoObject* request_obj, MonoObject** response_obj, MonoObject** exn) {
+void call_clr_request_handler(MonoMethod* handler, spin_http_request_t* req, MonoObject** response_obj, MonoObject** exn) {
     *exn = NULL;
 
-    void *params[2];
-    params[0] = request_obj;
-    params[1] = req;
+    void *params[1];
+    params[0] = req;
     *response_obj = mono_wasm_invoke_method(handler, NULL, params, exn);
 }
 
@@ -276,8 +210,6 @@ spin_http_response_t internal_error(const char* message) {
 // set up the runtime separately for each request.
 const char* preinitialized_error;
 MonoMethod* preinitialized_handler;
-MonoClass* preinitialized_builder_class;
-MonoImage* preinitialized_sdk_image;
 int preinitialized_done;
 
 __attribute__((export_name("wizer.initialize")))
@@ -288,7 +220,7 @@ void ensure_preinitialized() {
         dotnet_wasi_registerbundledassemblies();
         mono_wasm_load_runtime("", 0);
 
-        entry_points_err_t entry_points_err = find_entry_points("Fermyon.Spin.Sdk.HttpHandlerAttribute", "HttpRequestInterop", &preinitialized_handler, &preinitialized_builder_class, &preinitialized_sdk_image);
+        entry_points_err_t entry_points_err = find_entry_points("Fermyon.Spin.Sdk.HttpHandlerAttribute", "HttpRequestInterop", &preinitialized_handler);
         if (entry_points_err) {
             if (entry_points_err == EP_ERR_NO_HANDLER_METHOD) {
                 preinitialized_error = "Assembly does not contain a method with HttpHandlerAttribute";
@@ -319,21 +251,9 @@ void spin_http_handle_http_request(spin_http_request_t *req, spin_http_response_
         return;
     }
 
-    MonoObject* request_interop;
-    if (wit_request_to_interop_request(preinitialized_sdk_image, preinitialized_builder_class, req, &request_interop) != CONV_ERR_OK) {
-        *ret0 = internal_error("Internal error converting request to CLR object");
-        return;
-    }
-
-    MonoObject* request_obj;
-    if (interop_request_to_sdk_request(preinitialized_builder_class, request_interop, &request_obj) != CONV_ERR_OK) {
-        *ret0 = internal_error("Internal error converting request to CLR object");
-        return;
-    }
-
     MonoObject* response_obj;
     MonoObject* exn;
-    call_clr_request_handler(preinitialized_handler, req, request_obj, &response_obj, &exn);
+    call_clr_request_handler(preinitialized_handler, req, &response_obj, &exn);
     if (exn) {
         MonoString* exn_str = mono_object_to_string(exn, NULL);
         char* exn_cstr = mono_wasm_string_get_utf8(exn_str);

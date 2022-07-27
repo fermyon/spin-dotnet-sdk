@@ -15,46 +15,49 @@ public enum HttpMethod : byte
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public ref struct WitResponse
+public struct HttpResponse
 {
     public int Status;
-    public WitOptional<WitKeyValues> Headers;
-    public WitOptional<WitBuffer> Body;
+    public Optional<HttpKeyValues> Headers;
+    public Optional<HttpBuffer> Body;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public readonly ref struct WitRequest
+public readonly struct HttpRequest
 {
     public readonly HttpMethod Method;
-    public readonly WitString Url;
-    public readonly WitKeyValues Headers;
-    public readonly WitKeyValues Parameters;
-    public readonly WitOptional<WitBuffer> Body;
+    public readonly HttpString Url;
+    public readonly HttpKeyValues Headers;
+    public readonly HttpKeyValues Parameters;
+    public readonly Optional<HttpBuffer> Body;
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct WitBuffer
+public struct HttpBuffer
 {
-    public byte* _ptr;
-    public int _length;
+    private nint _ptr;
+    private int _length;
 
-    public ReadOnlySpan<byte> AsSpan() => new ReadOnlySpan<byte>(_ptr, _length);
+    public unsafe ReadOnlySpan<byte> AsSpan() => new ReadOnlySpan<byte>((void*)_ptr, _length);
 
-    public static WitBuffer StringAsUtf8(string value)
+    public static unsafe HttpBuffer FromString(string value)
     {
-        var exactByteCount = checked(Encoding.UTF8.GetByteCount(value));
-        var mem = (byte*)Marshal.AllocHGlobal(exactByteCount);
-        var buffer = new Span<byte>(mem, exactByteCount);
-        int byteCount = Encoding.UTF8.GetBytes(value, buffer);
-        return new WitBuffer { _ptr = mem, _length = byteCount };
+        var httpString = HttpString.FromString(value);
+        return new HttpBuffer { _ptr = httpString._utf8Ptr, _length = httpString._utf8Length };
     }
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct WitOptional<T>
+public readonly struct Optional<T>
 {
-    internal byte _isSome;
-    internal T _value;
+    private readonly byte _isSome;
+    private readonly T _value;
+
+    internal Optional(T value)
+    {
+        _isSome = 1;
+        _value = value;
+    }
 
     public bool TryGetValue(out T value)
     {
@@ -62,57 +65,71 @@ public struct WitOptional<T>
         return _isSome != 0;
     }
 
-    public WitOptional<T> None => default;
+    public static readonly Optional<T> None = default;
 }
 
 public static class WitOptional
 {
-    public static WitOptional<T> From<T>(T value) => new WitOptional<T> { _isSome = 1, _value = value };
+    // Just so the caller doesn't have to specify <T>
+    public static Optional<T> From<T>(T value) => new Optional<T>(value);
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct WitString
+public readonly struct HttpString
 {
-    byte* _utf8Ptr;
-    int _utf8Length;
+    internal readonly nint _utf8Ptr;
+    internal readonly int _utf8Length;
+
+    internal HttpString(nint ptr, int length)
+    {
+        _utf8Ptr = ptr;
+        _utf8Length = length;
+    }
 
     public override string ToString()
-        => Marshal.PtrToStringUTF8((nint)_utf8Ptr, _utf8Length);
+        => Marshal.PtrToStringUTF8(_utf8Ptr, _utf8Length);
 
-    public static WitString FromString(string value)
+    public static unsafe HttpString FromString(string value)
     {
-        var buffer = WitBuffer.StringAsUtf8(value);
-        return new WitString { _utf8Ptr = buffer._ptr, _utf8Length = buffer._length };
+        var exactByteCount = checked(Encoding.UTF8.GetByteCount(value));
+        var mem = Marshal.AllocHGlobal(exactByteCount);
+        var buffer = new Span<byte>((void*)mem, exactByteCount);
+        int byteCount = Encoding.UTF8.GetBytes(value, buffer);
+        return new HttpString(mem, byteCount);
     }
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct WitKeyValues
+public unsafe readonly struct HttpKeyValues
 {
-    public WitKeyValue* _valuesPtr;
-    public int _valuesLen;
+    private readonly WitKeyValue* _valuesPtr;
+    private readonly int _valuesLen;
 
-    public static WitKeyValues FromDictionary(Dictionary<string, string> dictionary)
+    internal HttpKeyValues(WitKeyValue* ptr, int length)
     {
-        var unmanagedValues = (WitKeyValue*)Marshal.AllocHGlobal(dictionary.Count * sizeof(WitKeyValue));
-        var currentPtr = unmanagedValues;
-        foreach (var (key, value) in dictionary)
-        {
-            currentPtr->Key = WitString.FromString(key);
-            currentPtr->Value = WitString.FromString(value);
-            currentPtr++;
-        }
-        return new WitKeyValues { _valuesPtr = unmanagedValues, _valuesLen = dictionary.Count };
+        _valuesPtr = ptr;
+        _valuesLen = length;
     }
 
-    public IEnumerable<KeyValuePair<string, string>> ToEnumerable()
+    public static HttpKeyValues FromDictionary(Dictionary<string, string> dictionary)
+    {
+        var unmanagedValues = (WitKeyValue*)Marshal.AllocHGlobal(dictionary.Count * sizeof(WitKeyValue));
+        var span = new Span<WitKeyValue>(unmanagedValues, dictionary.Count);
+        var index = 0;
+        foreach (var (key, value) in dictionary)
+        {
+            span[index] = new WitKeyValue(HttpString.FromString(key), HttpString.FromString(value));
+            index++;
+        }
+        return new HttpKeyValues(unmanagedValues, dictionary.Count);
+    }
+
+    public IReadOnlyCollection<KeyValuePair<string, string>> ToCollection()
     {
         var result = new List<KeyValuePair<string, string>>();
-        WitKeyValue* entry = _valuesPtr;
-        for (var i = 0; i < _valuesLen; i++)
+        foreach (var entry in new Span<WitKeyValue>(_valuesPtr, _valuesLen))
         {
-            result.Add(KeyValuePair.Create(entry->Key.ToString(), entry->Value.ToString()));
-            entry++;
+            result.Add(KeyValuePair.Create(entry.Key.ToString(), entry.Value.ToString()));
         }
 
         return result;
@@ -120,8 +137,14 @@ public unsafe struct WitKeyValues
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct WitKeyValue
+public readonly struct WitKeyValue
 {
-    public WitString Key;
-    public WitString Value;
+    public readonly HttpString Key;
+    public readonly HttpString Value;
+
+    internal WitKeyValue(HttpString key, HttpString value)
+    {
+        Key = key;
+        Value = value;
+    }
 }

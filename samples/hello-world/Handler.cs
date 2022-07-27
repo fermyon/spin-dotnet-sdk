@@ -6,17 +6,17 @@ namespace Fermyon.Spin.HelloWorld;
 public static class Handler
 {
     [HttpHandler]
-    public static void HandleHttpRequest(WitRequest witRequest, out WitResponse witResponse)
+    public static void HandleHttpRequest(HttpRequest witRequest, out HttpResponse witResponse)
     {
         var response = new StringBuilder();
-        response.AppendLine($"Called with method {witRequest.Method}, Url {witRequest.Url}");
+        response.AppendLine($"Called with method {witRequest.Method}, Url {witRequest.Url.ToString()}");
 
-        foreach (var h in witRequest.Headers.ToEnumerable())
+        foreach (var h in witRequest.Headers.ToCollection())
         {
             response.AppendLine($"Header '{h.Key}' had value '{h.Value}'");
         }
 
-        foreach (var p in witRequest.Parameters.ToEnumerable())
+        foreach (var p in witRequest.Parameters.ToCollection())
         {
             response.AppendLine($"Parameter '{p.Key}' had value '{p.Value}'");
         }
@@ -27,11 +27,11 @@ public static class Handler
         response.AppendLine(bodyInfo);
 
         witResponse.Status = 200;
-        witResponse.Headers = WitOptional.From(WitKeyValues.FromDictionary(new Dictionary<string, string>
+        witResponse.Headers = WitOptional.From(HttpKeyValues.FromDictionary(new Dictionary<string, string>
         {
             { "Content-Type", "text/plain" },
             { "X-TestHeader", "this is a test" },
         }));
-        witResponse.Body = WitOptional.From(WitBuffer.StringAsUtf8(response.ToString()));
+        witResponse.Body = WitOptional.From(Sdk.HttpBuffer.FromString(response.ToString()));
     }
 }

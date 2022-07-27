@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 
 #include "./spin-http.h"
 
@@ -47,6 +48,12 @@ spin_http_response_t internal_error(const char* message) {
     response.body.val.ptr = (uint8_t*)message;
     response.body.val.len = strlen(message);
     return response;
+}
+
+unsigned long time_microseconds() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return 1000000 * tv.tv_sec + tv.tv_usec;
 }
 
 // If wizer is run on this module, these fields will be populated at build time and hence we'll be able
@@ -99,13 +106,25 @@ void spin_http_handle_http_request(spin_http_request_t *req, spin_http_response_
 
     spin_http_response_t resp;
     MonoObject* exn;
+    unsigned long start_time = time_microseconds();
     call_clr_request_handler(preinitialized_handler, req, &resp, &exn);
+    unsigned long end_time = time_microseconds();
     if (exn) {
         MonoString* exn_str = mono_object_to_string(exn, NULL);
         char* exn_cstr = mono_wasm_string_get_utf8(exn_str);
         *ret0 = internal_error(exn_cstr);
         return;
     }
+
+    // Add an HTTP response header giving the timing information
+    // This code isn't memory-safe and is for debugging only - should be removed for production use
+    char* end_time_string;
+    int end_time_string_len = asprintf(&end_time_string, "%f ms", (end_time - start_time) / 1000.0);
+    spin_http_tuple2_string_string_t* time_header = &resp.headers.val.ptr[resp.headers.val.len++];
+    *time_header = (spin_http_tuple2_string_string_t){
+        {"time-in-dotnet", strlen("time-in-dotnet")},
+        {end_time_string, end_time_string_len}
+    };
 
     *ret0 = resp;
 }

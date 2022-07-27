@@ -6,29 +6,19 @@ namespace Fermyon.Spin.HelloWorld;
 public static class Handler
 {
     [HttpHandler]
-    public static void HandleHttpRequest(HttpRequest request, out HttpResponse response)
+    public static HttpResponse HandleHttpRequest(HttpRequest request) => request.Url.ToString() switch
     {
-        switch (request.Url.ToString())
-        {
-            case "/info":
-                LogFullRequestInfo(request, out response);
-                break;
-            default:
-                HelloWorld(request, out response);
-                break;
-        }
-    }
+        "/info" => LogFullRequestInfo(request),
+        _ => HelloWorld(),
+    };
 
-    private static void HelloWorld(HttpRequest request, out HttpResponse response)
+    private static HttpResponse HelloWorld() => new HttpResponse
     {
-        response = new HttpResponse
-        {
-            Status = 200,
-            BodyAsString = "Hello, world! For more information, try visiting /info",
-        };
-    }
+        Status = 200,
+        BodyAsString = "Hello, world! For more information, try visiting /info",
+    };
 
-    private static void LogFullRequestInfo(HttpRequest request, out HttpResponse response)
+    private static HttpResponse LogFullRequestInfo(HttpRequest request)
     {
         var responseText = new StringBuilder();
         responseText.AppendLine($"Called with method {request.Method}, Url {request.Url.ToString()}");
@@ -48,7 +38,7 @@ public static class Handler
             "The body was empty\n";
         responseText.AppendLine(bodyInfo);
 
-        response = new HttpResponse
+        return new HttpResponse
         {
             Status = 200,
             Headers = Optional.From(HttpKeyValues.FromDictionary(new Dictionary<string, string>

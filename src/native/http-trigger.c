@@ -31,13 +31,12 @@ typedef uint8_t conversion_err_t;
 #define CONV_ERR_GETTER_ERR 4
 #define CONV_ERR_NULL 5
 
-void call_clr_request_handler(MonoMethod* handler, spin_http_request_t* req, spin_http_response_t* resp, MonoObject** exn) {
+MonoObject* call_clr_request_handler(MonoMethod* handler, spin_http_request_t* req, MonoObject** exn) {
     *exn = NULL;
 
-    void *params[2];
+    void *params[1];
     params[0] = req;
-    params[1] = resp;
-    mono_wasm_invoke_method(handler, NULL, params, exn);
+    return mono_wasm_invoke_method(handler, NULL, params, exn);
 }
 
 spin_http_response_t internal_error(const char* message) {
@@ -104,11 +103,11 @@ void spin_http_handle_http_request(spin_http_request_t *req, spin_http_response_
         return;
     }
 
-    spin_http_response_t resp;
     MonoObject* exn;
     unsigned long start_time = time_microseconds();
-    call_clr_request_handler(preinitialized_handler, req, &resp, &exn);
+    MonoObject* call_result = call_clr_request_handler(preinitialized_handler, req, &exn);
     unsigned long end_time = time_microseconds();
+    
     if (exn) {
         MonoString* exn_str = mono_object_to_string(exn, NULL);
         char* exn_cstr = mono_wasm_string_get_utf8(exn_str);
@@ -116,20 +115,22 @@ void spin_http_handle_http_request(spin_http_request_t *req, spin_http_response_
         return;
     }
 
+    spin_http_response_t* resp = mono_object_unbox(call_result);
+
     // Add an HTTP response header giving the timing information
     // This is for debugging only - should be removed for production use
     char* end_time_header_name = "time-in-dotnet";
     char* end_time_string;
     int end_time_string_len = asprintf(&end_time_string, "%f ms", (end_time - start_time) / 1000.0);
-    int num_headers = ++resp.headers.val.len;
-    resp.headers.val.ptr = resp.headers.is_some
-        ? realloc(resp.headers.val.ptr, num_headers * sizeof(spin_http_tuple2_string_string_t))
+    int num_headers = ++resp->headers.val.len;
+    resp->headers.val.ptr = resp->headers.is_some
+        ? realloc(resp->headers.val.ptr, num_headers * sizeof(spin_http_tuple2_string_string_t))
         : malloc(num_headers * sizeof(spin_http_tuple2_string_string_t));
-    resp.headers.is_some = 1;
-    resp.headers.val.ptr[num_headers - 1] = (spin_http_tuple2_string_string_t){
+    resp->headers.is_some = 1;
+    resp->headers.val.ptr[num_headers - 1] = (spin_http_tuple2_string_string_t){
         {end_time_header_name, strlen(end_time_header_name)},
         {end_time_string, end_time_string_len}
     };
 
-    *ret0 = resp;
+    *ret0 = *resp;
 }

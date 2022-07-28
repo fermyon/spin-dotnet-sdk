@@ -1,83 +1,158 @@
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
+
 namespace Fermyon.Spin.Sdk;
 
-// TODO: the idea of these types is that they're easier to convert to/from
-// WIT than the more idiomatic types exposes to user code.  But could we
-// instead work this by having one type in each direction, with WIT-friendly
-// private fields and idiomatic adapter properties, and save the complexity?
-
-internal class HttpResponseInterop
+public enum HttpMethod : byte
 {
-    internal HttpResponseInterop(
-        short status,
-        StringPair[] headers,
-        byte[] body
-    )
-    {
-        Status = status;
-        Headers = headers;
-        Body = body;
-    }
-    
-    public short Status;
-    public StringPair[] Headers;
-    public byte[] Body;
+    Get = 0,
+    Post = 1,
+    Put = 2,
+    Delete = 3,
+    Patch = 4,
+    Head = 5,
+    Options = 6,
 }
 
-internal class HttpRequestInterop
+[StructLayout(LayoutKind.Sequential)]
+public struct HttpResponse
 {
-    // Used by the embedding layer which already sets the fields to
-    // safe values, but this avoids nullability warnings.
-    internal HttpRequestInterop()
+    public int Status;
+    public Optional<HttpKeyValues> Headers;
+    public Optional<HttpBuffer> Body;
+
+    public string? BodyAsString
     {
-        Method = 0;
-        Uri = String.Empty;
-        Headers = Array.Empty<StringPair>();
-        Parameters = Array.Empty<StringPair>();
-        Body = Array.Empty<byte>();
+        get => Body.TryGetValue(out var buffer) ? buffer.ToHttpString().ToString() : null;
+        set => Body = value is null ? Optional<HttpBuffer>.None : Optional.From(HttpBuffer.FromString(value));
+    }
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public readonly struct HttpRequest
+{
+    public readonly HttpMethod Method;
+    public readonly HttpString Url;
+    public readonly HttpKeyValues Headers;
+    public readonly HttpKeyValues Parameters;
+    public readonly Optional<HttpBuffer> Body;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public readonly struct HttpBuffer
+{
+    private readonly nint _ptr;
+    private readonly int _length;
+
+    private HttpBuffer(nint ptr, int length)
+    {
+        _ptr = ptr;
+        _length = length;
     }
 
-    public byte Method;
-    public string Uri;
-    public StringPair[] Headers;
-    public StringPair[] Parameters;
-    public byte[] Body;
+    public unsafe ReadOnlySpan<byte> AsSpan() => new ReadOnlySpan<byte>((void*)_ptr, _length);
 
-    public HttpRequest Build()
+    public static unsafe HttpBuffer FromString(string value)
     {
-        // TODO: ToDictionary() crashes on duplicate key - custom safe wrapper?
-        return new HttpRequest(
-            MethodOf(Method),
-            Uri,
-            Headers.ToDictionary(p => p.Key, p => p.Value), 
-            Parameters.ToDictionary(p => p.Key, p => p.Value),
-            Body
-        );
+        var httpString = HttpString.FromString(value);
+        return new HttpBuffer(httpString._utf8Ptr, httpString._utf8Length);
     }
 
-    private static HttpMethod MethodOf(byte method)
+    internal HttpString ToHttpString()
+        => new HttpString(_ptr, _length);
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public readonly struct Optional<T>
+{
+    private readonly byte _isSome;
+    private readonly T _value;
+
+    internal Optional(T value)
     {
-        // Numeric values MUST be kept in sync with the WIT
-        switch (method) {
-            case 0: return HttpMethod.Get;
-            case 1: return HttpMethod.Post;
-            case 2: return HttpMethod.Put;
-            case 3: return HttpMethod.Delete;
-            case 4: return HttpMethod.Patch;
-            case 5: return HttpMethod.Head;
-            case 6: return HttpMethod.Options;
-            default: throw new ArgumentOutOfRangeException(nameof(method));
+        _isSome = 1;
+        _value = value;
+    }
+
+    public bool TryGetValue(out T value)
+    {
+        value = _value;
+        return _isSome != 0;
+    }
+
+    public static readonly Optional<T> None = default;
+}
+
+public static class Optional
+{
+    // Just so the caller doesn't have to specify <T>
+    public static Optional<T> From<T>(T value) => new Optional<T>(value);
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public readonly struct HttpString
+{
+    internal readonly nint _utf8Ptr;
+    internal readonly int _utf8Length;
+
+    internal HttpString(nint ptr, int length)
+    {
+        _utf8Ptr = ptr;
+        _utf8Length = length;
+    }
+
+    public override string ToString()
+        => Marshal.PtrToStringUTF8(_utf8Ptr, _utf8Length);
+
+    public static unsafe HttpString FromString(string value)
+    {
+        var exactByteCount = checked(Encoding.UTF8.GetByteCount(value));
+        var mem = Marshal.AllocHGlobal(exactByteCount);
+        var buffer = new Span<byte>((void*)mem, exactByteCount);
+        int byteCount = Encoding.UTF8.GetBytes(value, buffer);
+        return new HttpString(mem, byteCount);
+    }
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe readonly struct HttpKeyValues
+{
+    private readonly HttpKeyValue* _valuesPtr;
+    private readonly int _valuesLen;
+
+    internal HttpKeyValues(HttpKeyValue* ptr, int length)
+    {
+        _valuesPtr = ptr;
+        _valuesLen = length;
+    }
+
+    public static HttpKeyValues FromDictionary(IReadOnlyDictionary<string, string> dictionary)
+    {
+        var unmanagedValues = (HttpKeyValue*)Marshal.AllocHGlobal(dictionary.Count * sizeof(HttpKeyValue));
+        var span = new Span<HttpKeyValue>(unmanagedValues, dictionary.Count);
+        var index = 0;
+        foreach (var (key, value) in dictionary)
+        {
+            span[index] = new HttpKeyValue(HttpString.FromString(key), HttpString.FromString(value));
+            index++;
         }
+        return new HttpKeyValues(unmanagedValues, dictionary.Count);
     }
+
+    public Span<HttpKeyValue> AsSpan()
+        => new Span<HttpKeyValue>(_valuesPtr, _valuesLen);
 }
 
-internal class StringPair
+[StructLayout(LayoutKind.Sequential)]
+public readonly struct HttpKeyValue
 {
-    public StringPair()
-    {
-        Key = String.Empty;
-        Value = String.Empty;
-    }
+    public readonly HttpString Key;
+    public readonly HttpString Value;
 
-    public string Key;
-    public string Value;
+    internal HttpKeyValue(HttpString key, HttpString value)
+    {
+        Key = key;
+        Value = value;
+    }
 }

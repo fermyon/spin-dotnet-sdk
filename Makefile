@@ -7,3 +7,4 @@ generate:
 bootstrap:
 	# install the WIT Bindgen version we are currently using in Spin e06c6b1
 	cargo install wit-bindgen-cli --git https://github.com/bytecodealliance/wit-bindgen --rev dde4694aaa6acf9370206527a798ac4ba6a8c5b8 --force
+	cargo install wizer --all-features

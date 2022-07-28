@@ -1,26 +1,52 @@
 ﻿using Fermyon.Spin.Sdk;
+using System.Text;
 
 namespace Fermyon.Spin.HelloWorld;
 
 public static class Handler
 {
     [HttpHandler]
-    public static HttpResponse HandleHttpRequest(HttpRequest r)
+    public static HttpResponse HandleHttpRequest(HttpRequest request) => request.Url.ToString() switch
     {
-        var requestInfo = $"Called with method {r.Method} on URL {r.Uri}";
-        var headerInfo = String.Join("\n", r.Headers.Select(p => $"Header '{p.Key}' had value '{p.Value}'"));
-        var bodyInfo = r.Body.Length > 0 ?
-            $"The body (as a string) was: {System.Text.Encoding.UTF8.GetString(r.Body)}\n" :
-            "The body was empty\n";
-        var responseBody = String.Join("\n", new[] { requestInfo, headerInfo, bodyInfo });
+        "/info" => LogFullRequestInfo(request),
+        _ => HelloWorld(),
+    };
 
-        return new HttpResponse {
+    private static HttpResponse HelloWorld() => new HttpResponse
+    {
+        Status = 200,
+        BodyAsString = "Hello, world! For more information, try visiting /info",
+    };
+
+    private static HttpResponse LogFullRequestInfo(HttpRequest request)
+    {
+        var responseText = new StringBuilder();
+        responseText.AppendLine($"Called with method {request.Method}, Url {request.Url.ToString()}");
+
+        foreach (var h in request.Headers.AsSpan())
+        {
+            responseText.AppendLine($"Header '{h.Key}' had value '{h.Value}'");
+        }
+
+        foreach (var p in request.Parameters.AsSpan())
+        {
+            responseText.AppendLine($"Parameter '{p.Key}' had value '{p.Value}'");
+        }
+
+        var bodyInfo = request.Body.TryGetValue(out var bodyBuffer) ?
+            $"The body (as a string) was: {Encoding.UTF8.GetString(bodyBuffer.AsSpan())}\n" :
+            "The body was empty\n";
+        responseText.AppendLine(bodyInfo);
+
+        return new HttpResponse
+        {
             Status = 200,
-            Headers = new Dictionary<string, string> {
+            Headers = Optional.From(HttpKeyValues.FromDictionary(new Dictionary<string, string>
+            {
                 { "Content-Type", "text/plain" },
                 { "X-TestHeader", "this is a test" },
-            },
-            Body = System.Text.Encoding.UTF8.GetBytes(responseBody),
+            })),
+            BodyAsString = responseText.ToString(),
         };
     }
 }

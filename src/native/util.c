@@ -19,48 +19,6 @@ const char* dotnet_wasi_getentrypointassemblyname();
 const char* dotnet_wasi_getbundledfile(const char* name, int* out_length);
 void dotnet_wasi_registerbundledassemblies();
 
-set_member_err_t set_property(MonoClass* klass, MonoObject* instance, const char* name, void* value) {
-    MonoProperty* prop = mono_class_get_property_from_name(klass, name);
-    if (!prop) {
-        return SET_MEMBER_ERR_NOT_FOUND;
-    }
-    MonoMethod* setter = mono_property_get_set_method(prop);
-    if (!setter) {
-        return SET_MEMBER_ERR_READONLY;
-    }
-
-    MonoObject* exn = NULL;
-    void* args[1];
-    args[0] = value;
-    mono_wasm_invoke_method(setter, instance, args, &exn);
-
-    mono_free(prop);
-    mono_free(setter);
-
-    if (exn) {
-        return SET_MEMBER_ERR_EXCEPTION;
-    }
-    return SET_MEMBER_ERR_OK;
-}
-
-set_member_err_t set_field(MonoClass* klass, MonoObject* instance, const char* name, void* value) {
-    MonoClassField* field = mono_class_get_field_from_name(klass, name);
-    if (!field) {
-        return SET_MEMBER_ERR_NOT_FOUND;
-    }
-    mono_field_set_value(instance, field, value);
-    return SET_MEMBER_ERR_OK;
-}
-
-get_member_err_t get_field(MonoClass* klass, MonoObject* instance, const char* name, void* receiver) {
-    MonoClassField* field = mono_class_get_field_from_name(klass, name);
-    if (!field) {
-        return GET_MEMBER_ERR_NOT_FOUND;
-    }
-    mono_field_get_value(instance, field, receiver);
-    return GET_MEMBER_ERR_OK;
-}
-
 resolve_err_t find_decorated_method(MonoAssembly* assembly, const char* attr_name, MonoMethod** decorated_method) {
     MonoImage* image = mono_assembly_get_image(assembly);
     if (!image) {
@@ -115,7 +73,7 @@ resolve_err_t find_decorated_method(MonoAssembly* assembly, const char* attr_nam
     return RESOLVE_ERR_NO_MATCH;
 }
 
-entry_points_err_t find_entry_points(const char* attr_name, const char* interop_helper_name, MonoMethod** handler, MonoClass** interop_helper_class, MonoImage** sdk_dll_image) {
+entry_points_err_t find_entry_points(const char* attr_name, const char* interop_helper_name, MonoMethod** handler) {
     MonoAssembly* assembly = mono_assembly_open(dotnet_wasi_getentrypointassemblyname(), NULL);
     if (!assembly) {
         return EP_ERR_NO_ENTRY_ASSEMBLY;
@@ -127,36 +85,6 @@ entry_points_err_t find_entry_points(const char* attr_name, const char* interop_
         return EP_ERR_NO_HANDLER_METHOD;
     }
 
-    MonoMethodSignature* signature = mono_method_signature(method);
-    if (!signature) {
-        return EP_ERR_NO_SIGNATURE;
-    }
-
-    // Assume for now only one param and of the right type
-    void* iter = NULL;
-    MonoType* request_type = mono_signature_get_params(signature, &iter);
-    if (!request_type) {
-        return EP_ERR_NO_PARAM_TYPE;
-    }
-
-    MonoClass* request_class = mono_type_get_class(request_type);
-    if (!request_class) {
-        return EP_ERR_NO_REQUEST_CLASS;
-    }
-
-    MonoImage* sdk_image = mono_class_get_image(request_class);
-    if (!sdk_image) {
-        return EP_ERR_NO_SDK_IMAGE;
-    }
-
-    MonoClass* interop_class = mono_class_from_name(sdk_image, "Fermyon.Spin.Sdk", interop_helper_name);
-    if (!interop_class) {
-        return EP_ERR_NO_INTEROP_HELPER_CLASS;
-    }
-
     *handler = method;
-    *interop_helper_class = interop_class;
-    *sdk_dll_image = sdk_image;
-
     return EP_ERR_OK;
 }

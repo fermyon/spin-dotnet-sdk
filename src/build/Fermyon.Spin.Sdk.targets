@@ -5,6 +5,7 @@
 		<WasiNativeFileReference Include="$(MSBuildThisFileDirectory)..\native\http-trigger.c" />
 		<WasiNativeFileReference Include="$(MSBuildThisFileDirectory)..\native\util.c" />
 		<WasiNativeFileReference Include="$(MSBuildThisFileDirectory)..\native\spin-http.c" />
+		<WasiNativeFileReference Include="$(MSBuildThisFileDirectory)..\native\wasi-outbound-http.c" />
 		<WasiAfterRuntimeLoaded Include="spin_attach_internal_calls" />
 	</ItemGroup>
 

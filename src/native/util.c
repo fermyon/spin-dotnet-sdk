@@ -73,7 +73,7 @@ resolve_err_t find_decorated_method(MonoAssembly* assembly, const char* attr_nam
     return RESOLVE_ERR_NO_MATCH;
 }
 
-entry_points_err_t find_entry_points(const char* attr_name, const char* interop_helper_name, MonoMethod** handler) {
+entry_points_err_t find_entry_points(const char* attr_name, MonoMethod** handler) {
     MonoAssembly* assembly = mono_assembly_open(dotnet_wasi_getentrypointassemblyname(), NULL);
     if (!assembly) {
         return EP_ERR_NO_ENTRY_ASSEMBLY;

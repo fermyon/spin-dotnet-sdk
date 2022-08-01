@@ -63,7 +63,7 @@ void ensure_preinitialized() {
         mono_wasm_load_runtime("", 0);
         spin_attach_internal_calls();
 
-        entry_points_err_t entry_points_err = find_entry_points("Fermyon.Spin.Sdk.HttpHandlerAttribute", "HttpRequestInterop", &preinitialized_handler);
+        entry_points_err_t entry_points_err = find_entry_points("Fermyon.Spin.Sdk.HttpHandlerAttribute", &preinitialized_handler);
         if (entry_points_err) {
             if (entry_points_err == EP_ERR_NO_HANDLER_METHOD) {
                 preinitialized_error = "Assembly does not contain a method with HttpHandlerAttribute";

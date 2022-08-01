@@ -27,6 +27,6 @@ typedef uint8_t entry_points_err_t;
 #define EP_ERR_NO_ENTRY_ASSEMBLY 1
 #define EP_ERR_NO_HANDLER_METHOD 2
 
-entry_points_err_t find_entry_points(const char* attr_name, const char* interop_helper_name, MonoMethod** handler);
+entry_points_err_t find_entry_points(const char* attr_name, MonoMethod** handler);
 
 #endif

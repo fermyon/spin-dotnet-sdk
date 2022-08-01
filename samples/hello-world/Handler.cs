@@ -9,12 +9,14 @@ public static class Handler
     public static HttpResponse HandleHttpRequest(HttpRequest request) => request.Url.ToString() switch
     {
         "/info" => LogFullRequestInfo(request),
+        "/redis" => UseRedis(request),
         _ => HelloWorld(request),
     };
 
     private static HttpResponse HelloWorld(HttpRequest request)
     {
-        var onboundRequest = new HttpRequest {
+        var onboundRequest = new HttpRequest
+        {
             // .WithMethod(Fermyon.Spin.Sdk.HttpMethod.Delete)
             // .WithUri("http://127.0.0.1:3001/hibblebibbdle")
             // .WithBody(System.Text.Encoding.UTF8.GetBytes("see the little goblin, see his little feet"))
@@ -23,7 +25,7 @@ public static class Handler
             // .WithQuery("qqq", "qqqqqq");
 
             Method = Fermyon.Spin.Sdk.HttpMethod.Delete,
-            Url = HttpString.FromString("http://127.0.0.1:3001/hibblebibbdle"),
+            Url = InteropString.FromString("http://127.0.0.1:3001/hibblebibbdle"),
             Headers = HttpKeyValues.FromDictionary(new Dictionary<string, string>
             {
                 { "X-Outbound-Test", "From .NET" },
@@ -33,7 +35,7 @@ public static class Handler
             {
                 { "myquery", "qqq" },
             }),
-            Body = Optional.From(HttpBuffer.FromString("see the little goblin, see his little feet")),
+            Body = Optional.From(Buffer.FromString("see the little goblin, see his little feet")),
         };
 
         string onboundInfo;
@@ -105,7 +107,7 @@ public static class Handler
         }
 
         var bodyInfo = request.Body.TryGetValue(out var bodyBuffer) ?
-            $"The body (as a string) was: {Encoding.UTF8.GetString(bodyBuffer.AsSpan())}\n" :
+            $"The body (as a string) was: {bodyBuffer.ToUTF8String()}\n" :
             "The body was empty\n";
         responseText.AppendLine(bodyInfo);
 
@@ -121,7 +123,28 @@ public static class Handler
         };
     }
 
-    private static string FormatHeadersShort(Optional<HttpKeyValues> optHeaders) {
+    private static HttpResponse UseRedis(HttpRequest request)
+    {
+        var address = "redis://127.0.0.1:6379";
+        var key = "mykey";
+        var channel = "messages";
+
+        var payload = request.Body.TryGetValue(out var bodyBuffer) ? bodyBuffer : throw new Exception("cannot read body");
+        RedisOutbound.Set(address, key, payload);
+
+        var res = RedisOutbound.Get(address, key).ToUTF8String();
+
+        RedisOutbound.Publish(address, channel, payload);
+
+        return new HttpResponse
+        {
+            Status = 200,
+            BodyAsString = res
+        };
+    }
+
+    private static string FormatHeadersShort(Optional<HttpKeyValues> optHeaders)
+    {
         if (optHeaders.TryGetValue(out var headers))
         {
             return String.Join(" / ", headers.AsSpan().ToArray().Select(kvp => $"{kvp.Key}={kvp.Value}"));

@@ -13,8 +13,13 @@
 
 #include "host-components.h"
 #include "wasi-outbound-http.h"
+#include "outbound-redis.h"
 
 void spin_attach_internal_calls()
 {
     mono_add_internal_call("Fermyon.Spin.Sdk.OutboundHttpInterop::wasi_outbound_http_request", wasi_outbound_http_request);
+
+    mono_add_internal_call("Fermyon.Spin.Sdk.OutboundRedisInterop::outbound_redis_get", outbound_redis_get);
+    mono_add_internal_call("Fermyon.Spin.Sdk.OutboundRedisInterop::outbound_redis_set", outbound_redis_set);
+    mono_add_internal_call("Fermyon.Spin.Sdk.OutboundRedisInterop::outbound_redis_publish", outbound_redis_publish);
 }

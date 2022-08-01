@@ -1,0 +1,10 @@
+use * from redis-types
+
+// Publish a Redis message to the specified channel and return an error, if any.
+publish: func(address: string, channel: string, payload: payload) -> expected<unit, error>
+
+// Get the value of a key.
+get: func(address: string, key: string) -> expected<payload, error>
+
+// Set key to value. If key already holds a value, it is overwritten.
+set: func(address: string, key: string, value: payload) -> expected<unit, error>

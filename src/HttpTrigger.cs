@@ -4,4 +4,7 @@ namespace Fermyon.Spin.Sdk;
 /// Marks a method as being the handler for the Spin HTTP trigger.
 /// </summary>
 [AttributeUsage(AttributeTargets.Method)]
-public sealed class HttpHandlerAttribute : Attribute {}
+public sealed class HttpHandlerAttribute : Attribute
+{
+    public string WarmupUrl { get; set; } = "/warmupz";
+}

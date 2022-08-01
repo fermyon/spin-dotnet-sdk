@@ -5,15 +5,15 @@ namespace Fermyon.Spin.HelloWorld;
 
 public static class Handler
 {
-    [HttpHandler]
+    [HttpHandler(WarmupUrl = "/scroggins")]
     public static HttpResponse HandleHttpRequest(HttpRequest request) => request.Url.ToString() switch
     {
-        "/info" => LogFullRequestInfo(request),
+        "/scroggins" => WarmCodePath(request),
         "/redis" => UseRedis(request),
-        _ => HelloWorld(request),
+        _ => HandleRealRequest(request),
     };
 
-    private static HttpResponse HelloWorld(HttpRequest request)
+    private static HttpResponse HandleRealRequest(HttpRequest request)
     {
         var onboundRequest = new HttpRequest
         {
@@ -89,7 +89,7 @@ public static class Handler
         };
     }
 
-    private static HttpResponse LogFullRequestInfo(HttpRequest request)
+    private static HttpResponse WarmCodePath(HttpRequest request)
     {
         // Warmup
 

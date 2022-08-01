@@ -19,7 +19,31 @@ const char* dotnet_wasi_getentrypointassemblyname();
 const char* dotnet_wasi_getbundledfile(const char* name, int* out_length);
 void dotnet_wasi_registerbundledassemblies();
 
-resolve_err_t find_decorated_method(MonoAssembly* assembly, const char* attr_name, MonoMethod** decorated_method) {
+get_member_err_t get_property(MonoObject* instance, const char* name, MonoObject** result) {
+    MonoClass* klass = mono_object_get_class(instance);
+    MonoProperty* prop = mono_class_get_property_from_name(klass, name);
+    if (!prop) {
+        return GET_MEMBER_ERR_NOT_FOUND;
+    }
+    MonoMethod* getter = mono_property_get_get_method(prop);
+    if (!getter) {
+        return GET_MEMBER_ERR_WRITE_ONLY;
+    }
+
+    MonoObject* exn = NULL;
+    *result = mono_wasm_invoke_method(getter, instance, NULL, &exn);
+
+    mono_free(prop);
+    mono_free(getter);
+
+    if (exn) {
+        return GET_MEMBER_ERR_EXCEPTION;
+    }
+
+    return GET_MEMBER_ERR_OK;    
+}
+
+resolve_err_t find_decorated_method(MonoAssembly* assembly, const char* attr_name, MonoObject** attr_obj, MonoMethod** decorated_method) {
     MonoImage* image = mono_assembly_get_image(assembly);
     if (!image) {
         return RESOLVE_ERR_IMAGE_NOT_RESOLVED;
@@ -58,6 +82,12 @@ resolve_err_t find_decorated_method(MonoAssembly* assembly, const char* attr_nam
                     char* attr_ctor_name = mono_method_full_name(attr_info->attrs[i].ctor, 1);
                     if (strstr(attr_ctor_name, attr_name) != NULL) {
                         *decorated_method = method;
+                        MonoClass* attr_class = mono_method_get_class(attr_info->attrs[i].ctor);
+                        if (attr_class) {
+                            *attr_obj = mono_custom_attrs_get_attr(attr_info, attr_class);
+                        } else {
+                            *attr_obj = NULL;
+                        }
                         return RESOLVE_ERR_OK;
                     }
                     mono_free(attr_ctor_name);
@@ -73,18 +103,16 @@ resolve_err_t find_decorated_method(MonoAssembly* assembly, const char* attr_nam
     return RESOLVE_ERR_NO_MATCH;
 }
 
-entry_points_err_t find_entry_points(const char* attr_name, MonoMethod** handler) {
+entry_points_err_t find_entry_points(const char* attr_name, MonoObject** attr_obj, MonoMethod** handler) {
     MonoAssembly* assembly = mono_assembly_open(dotnet_wasi_getentrypointassemblyname(), NULL);
     if (!assembly) {
         return EP_ERR_NO_ENTRY_ASSEMBLY;
     }
 
-    MonoMethod* method;
-    resolve_err_t find_err = find_decorated_method(assembly, attr_name, &method);
+    resolve_err_t find_err = find_decorated_method(assembly, attr_name, attr_obj, handler);
     if (find_err) {
         return EP_ERR_NO_HANDLER_METHOD;
     }
 
-    *handler = method;
     return EP_ERR_OK;
 }

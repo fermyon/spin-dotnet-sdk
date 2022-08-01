@@ -5,7 +5,9 @@ version = "1.0.0"
 
 [[component]]
 id = "hello"
-source = "bin/Debug/net7.0/HelloWorld.Spin.wasm"
+source = "bin/Release/net7.0/HelloWorld.Spin.wasm"
 allowed_http_hosts = [ "https://spin.fermyon.dev", "http://127.0.0.1:3001" ]
+[component.build]
+command = "dotnet build -c Release"
 [component.trigger]
 route = "/..."

@@ -23,11 +23,54 @@ const char* dotnet_wasi_getentrypointassemblyname();
 const char* dotnet_wasi_getbundledfile(const char* name, int* out_length);
 void dotnet_wasi_registerbundledassemblies();
 
-MonoObject* call_clr_request_handler(MonoMethod* handler, spin_http_request_t* req, MonoObject** exn) {
+unsigned long time_microseconds() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return 1000000 * tv.tv_sec + tv.tv_usec;
+}
+
+MonoObject* call_clr_request_handler(MonoMethod* handler, spin_http_request_t* req, MonoObject** exn, unsigned long *int_time) {
     *exn = NULL;
 
+    MonoMethodSignature* signature = mono_method_signature(handler);
+    if (!signature) {
+        return NULL; //EP_ERR_NO_SIGNATURE;
+    }
+
+    // Assume for now only one param and of the right type
+    void* iter = NULL;
+    MonoType* request_type = mono_signature_get_params(signature, &iter);
+    if (!request_type) {
+        return NULL; //EP_ERR_NO_PARAM_TYPE;
+    }
+
+    MonoClass* request_class = mono_type_get_class(request_type);
+    if (!request_class) {
+        return NULL; //EP_ERR_NO_REQUEST_CLASS;
+    }
+
+    MonoMethod* converter = mono_class_get_method_from_name(request_class, "From", 1);
+    if (!converter) {
+        return NULL; //EP_ERR_NO_CONVERTER;
+    }
+
+    // OKAY THIS IS THE EXPENSIVE ONE.  Time goes from 0.02ms to above this stanza
+    // to 0.91ms below this stanza.
+    //
+    // If the From method calls only a default ctor then it drops to 0.33ms.  So about 0.6ms
+    // is the work done in the real ctor.  And about 0.45ms of that seems to be in the
+    // header and parameter ToDictionary() calls.
     void *params[1];
     params[0] = req;
+    MonoObject* request_obj = mono_wasm_invoke_method(converter, NULL, params, exn);
+
+    if (*exn != NULL) {
+        return NULL;
+    }
+
+    *int_time = time_microseconds();
+
+    params[0] = request_obj;
     return mono_wasm_invoke_method(handler, NULL, params, exn);
 }
 
@@ -39,12 +82,6 @@ spin_http_response_t internal_error(const char* message) {
     response.body.val.ptr = (uint8_t*)message;
     response.body.val.len = strlen(message);
     return response;
-}
-
-unsigned long time_microseconds() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return 1000000 * tv.tv_sec + tv.tv_usec;
 }
 
 // If wizer is run on this module, these fields will be populated at build time and hence we'll be able
@@ -107,7 +144,8 @@ void spin_http_handle_http_request(spin_http_request_t *req, spin_http_response_
 
     MonoObject* exn;
     unsigned long start_time = time_microseconds();
-    MonoObject* call_result = call_clr_request_handler(preinitialized_handler, req, &exn);
+    unsigned long int_time;
+    MonoObject* call_result = call_clr_request_handler(preinitialized_handler, req, &exn, &int_time);
     unsigned long end_time = time_microseconds();
     
     if (exn) {
@@ -121,14 +159,22 @@ void spin_http_handle_http_request(spin_http_request_t *req, spin_http_response_
 
     // Add an HTTP response header giving the timing information
     // This is for debugging only - should be removed for production use
+    char* int_time_header_name = "time-to-int-checkpoint";
+    char* int_time_string;
     char* end_time_header_name = "time-in-dotnet";
     char* end_time_string;
+    int int_time_string_len = asprintf(&int_time_string, "%f ms", (int_time - start_time) / 1000.0);
     int end_time_string_len = asprintf(&end_time_string, "%f ms", (end_time - start_time) / 1000.0);
+    ++resp->headers.val.len;
     int num_headers = ++resp->headers.val.len;
     resp->headers.val.ptr = resp->headers.is_some
         ? realloc(resp->headers.val.ptr, num_headers * sizeof(spin_http_tuple2_string_string_t))
         : malloc(num_headers * sizeof(spin_http_tuple2_string_string_t));
     resp->headers.is_some = 1;
+    resp->headers.val.ptr[num_headers - 2] = (spin_http_tuple2_string_string_t){
+        {int_time_header_name, strlen(int_time_header_name)},
+        {int_time_string, int_time_string_len}
+    };
     resp->headers.val.ptr[num_headers - 1] = (spin_http_tuple2_string_string_t){
         {end_time_header_name, strlen(end_time_header_name)},
         {end_time_string, end_time_string_len}

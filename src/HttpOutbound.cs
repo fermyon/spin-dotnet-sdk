@@ -10,8 +10,9 @@ public static class OutboundHttp
     // be async...
     public static HttpResponse Send(HttpRequest request)
     {
+        var req = request.ToInterop();
         var resp = new HttpResponse();
-        var err = OutboundHttpInterop.wasi_outbound_http_request(ref request, ref resp);
+        var err = OutboundHttpInterop.wasi_outbound_http_request(ref req, ref resp);
 
         if (err == 0 || err == 255)
         {

@@ -10,7 +10,7 @@ public static class Handler
     {
         "/scroggins" => WarmCodePath(request),
         "/redis" => UseRedis(request),
-        _ => HandleRealRequest(request),
+        _ => WarmCodePath(request), //HandleRealRequest(request),
     };
 
     private static HttpResponse HandleRealRequest(HttpRequest request)
@@ -25,16 +25,16 @@ public static class Handler
             // .WithQuery("qqq", "qqqqqq");
 
             Method = Fermyon.Spin.Sdk.HttpMethod.Delete,
-            Url = InteropString.FromString("http://127.0.0.1:3001/hibblebibbdle"),
-            Headers = HttpKeyValues.FromDictionary(new Dictionary<string, string>
+            Url = "http://127.0.0.1:3001/hibblebibbdle",
+            Headers = new Dictionary<string, string>
             {
                 { "X-Outbound-Test", "From .NET" },
                 { "Accept", "text/plain" },
-            }),
-            Parameters = HttpKeyValues.FromDictionary(new Dictionary<string, string>
+            },
+            Parameters = new Dictionary<string, string>
             {
                 { "myquery", "qqq" },
-            }),
+            },
             Body = Optional.From(Buffer.FromString("see the little goblin, see his little feet")),
         };
 
@@ -58,14 +58,14 @@ public static class Handler
         }
 
         var responseText = new StringBuilder();
-        responseText.AppendLine($"Called with method {request.Method}, Url {request.Url.ToString()}");
+        responseText.AppendLine($"Called with method {request.Method}, Url {request.Url}");
 
-        foreach (var h in request.Headers.AsSpan())
+        foreach (var h in request.Headers)
         {
             responseText.AppendLine($"Header '{h.Key}' had value '{h.Value}'");
         }
 
-        foreach (var p in request.Parameters.AsSpan())
+        foreach (var p in request.Parameters)
         {
             responseText.AppendLine($"Parameter '{p.Key}' had value '{p.Value}'");
         }
@@ -94,14 +94,14 @@ public static class Handler
         // Warmup
 
         var responseText = new StringBuilder();
-        responseText.AppendLine($"Called with method {request.Method}, Url {request.Url.ToString()}");
+        responseText.AppendLine($"Called with method {request.Method}, Url {request.Url}");
 
-        foreach (var h in request.Headers.AsSpan())
+        foreach (var h in request.Headers)
         {
             responseText.AppendLine($"Header '{h.Key}' had value '{h.Value}'");
         }
 
-        foreach (var p in request.Parameters.AsSpan())
+        foreach (var p in request.Parameters)
         {
             responseText.AppendLine($"Parameter '{p.Key}' had value '{p.Value}'");
         }

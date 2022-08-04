@@ -32,6 +32,7 @@ public readonly struct Buffer
 
 [StructLayout(LayoutKind.Sequential)]
 public readonly struct Optional<T>
+    where T: struct
 {
     private readonly byte _isSome;
     private readonly T _value;
@@ -49,12 +50,15 @@ public readonly struct Optional<T>
     }
 
     public static readonly Optional<T> None = default;
+
+    public static implicit operator T?(Optional<T> opt) =>
+        opt._isSome == 0 ? null : opt._value;
 }
 
 public static class Optional
 {
     // Just so the caller doesn't have to specify <T>
-    public static Optional<T> From<T>(T value) => new Optional<T>(value);
+    public static Optional<T> From<T>(T value) where T: struct => new Optional<T>(value);
 }
 
 [StructLayout(LayoutKind.Sequential)]

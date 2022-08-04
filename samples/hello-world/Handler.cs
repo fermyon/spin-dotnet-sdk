@@ -1,4 +1,5 @@
 ﻿using Fermyon.Spin.Sdk;
+using System.Net;
 using System.Text;
 
 namespace Fermyon.Spin.HelloWorld;
@@ -6,11 +7,11 @@ namespace Fermyon.Spin.HelloWorld;
 public static class Handler
 {
     [HttpHandler(WarmupUrl = "/scroggins")]
-    public static HttpResponse HandleHttpRequest(HttpRequest request) => request.Url.ToString() switch
+    public static HttpResponse HandleHttpRequest(HttpRequest request) => request.Url switch
     {
         "/scroggins" => WarmCodePath(request),
         "/redis" => UseRedis(request),
-        _ => WarmCodePath(request), //HandleRealRequest(request),
+        _ => HandleRealRequest(request),
     };
 
     private static HttpResponse HandleRealRequest(HttpRequest request)
@@ -26,15 +27,15 @@ public static class Handler
 
             Method = Fermyon.Spin.Sdk.HttpMethod.Delete,
             Url = "http://127.0.0.1:3001/hibblebibbdle",
-            Headers = new Dictionary<string, string>
+            Headers = HttpKeyValues.FromDictionary(new Dictionary<string, string>
             {
                 { "X-Outbound-Test", "From .NET" },
                 { "Accept", "text/plain" },
-            },
-            Parameters = new Dictionary<string, string>
+            }),
+            Parameters = HttpKeyValues.FromDictionary(new Dictionary<string, string>
             {
                 { "myquery", "qqq" },
-            },
+            }),
             Body = Optional.From(Buffer.FromString("see the little goblin, see his little feet")),
         };
 
@@ -43,13 +44,13 @@ public static class Handler
         try
         {
             var response = OutboundHttp.Send(onboundRequest);
-            var status = response.Status;
-            var onboundSucceeded = status >= 200 && status <= 299;
-            var onboundResponseText = status == 200 ?
+            var status = response.StatusCode;
+            var onboundSucceeded = (int)status >= 200 && (int)status <= 299;
+            var onboundResponseText = status == HttpStatusCode.OK ?
                 response.BodyAsString :
                 "<error>";
             onboundInfo = onboundSucceeded ?
-                $"The onbound request returned status {status} with {123456 /*TODO: response.Headers.Count()*/} headers ({FormatHeadersShort(response.Headers)}) and the body was:\n{onboundResponseText}\n" :
+                $"The onbound request returned status {status} with {response.Headers.Count} headers ({FormatHeadersShort(response.Headers)}) and the body was:\n{onboundResponseText}\n" :
                 $"Tragically the onbound request failed with code {status}\n";
         }
         catch (Exception ex)
@@ -60,6 +61,7 @@ public static class Handler
         var responseText = new StringBuilder();
         responseText.AppendLine($"Called with method {request.Method}, Url {request.Url}");
 
+        responseText.AppendLine($"The spin-full-url header was {request.Headers["spin-full-url"]}");
         foreach (var h in request.Headers)
         {
             responseText.AppendLine($"Header '{h.Key}' had value '{h.Value}'");
@@ -79,12 +81,12 @@ public static class Handler
 
         return new HttpResponse
         {
-            Status = 200,
-            Headers = Optional.From(HttpKeyValues.FromDictionary(new Dictionary<string, string>
+            StatusCode = HttpStatusCode.OK,
+            Headers = new Dictionary<string, string>
             {
                 { "Content-Type", "text/plain" },
                 { "X-TestHeader", "this is a test" },
-            })),
+            },
             BodyAsString = responseText.ToString(),
         };
     }
@@ -113,12 +115,12 @@ public static class Handler
 
         return new HttpResponse
         {
-            Status = 200,
-            Headers = Optional.From(HttpKeyValues.FromDictionary(new Dictionary<string, string>
+            StatusCode = HttpStatusCode.OK,
+            Headers = new Dictionary<string, string>
             {
                 { "Content-Type", "text/plain" },
                 { "X-TestHeader", "this is a test" },
-            })),
+            },
             BodyAsString = responseText.ToString(),
         };
     }
@@ -138,20 +140,17 @@ public static class Handler
 
         return new HttpResponse
         {
-            Status = 200,
+            StatusCode = HttpStatusCode.OK,
             BodyAsString = res
         };
     }
 
-    private static string FormatHeadersShort(Optional<HttpKeyValues> optHeaders)
+    private static string FormatHeadersShort(IReadOnlyDictionary<string, string> headers)
     {
-        if (optHeaders.TryGetValue(out var headers))
-        {
-            return String.Join(" / ", headers.AsSpan().ToArray().Select(kvp => $"{kvp.Key}={kvp.Value}"));
-        }
-        else
+        if (headers.Count == 0)
         {
             return "<no headers>";
         }
+        return String.Join(" / ", headers.Select(kvp => $"{kvp.Key}={kvp.Value}"));
     }
 }

@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -17,9 +19,22 @@ public enum HttpMethod : byte
 [StructLayout(LayoutKind.Sequential)]
 public struct HttpResponse
 {
-    public int Status;
-    public Optional<HttpKeyValues> Headers;
+    private static IReadOnlyDictionary<string, string> Empty = ImmutableDictionary.Create<string, string>();
+    private int _status;
+    public Optional<HttpKeyValues> _headers;
     public Optional<Buffer> Body;
+
+    public HttpStatusCode StatusCode
+    {
+        get => (HttpStatusCode)_status;
+        set => _status = (int)value;
+    }
+
+    public IReadOnlyDictionary<string, string> Headers
+    {
+        get => _headers.TryGetValue(out var headers) ? headers : Empty;
+        set => _headers = value.Count == 0 ? Optional<HttpKeyValues>.None : Optional.From(HttpKeyValues.FromDictionary(value));
+    }
 
     public string? BodyAsString
     {
@@ -29,74 +44,47 @@ public struct HttpResponse
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public struct HttpRequestImpl
+public struct HttpRequest
 {
-    public HttpMethod Method;
-    public InteropString Url;
-    public HttpKeyValues Headers;
-    public HttpKeyValues Parameters;
-    public Optional<Buffer> Body;
-}
+    private HttpMethod _method;
+    private InteropString _url;
+    private HttpKeyValues _headers;
+    private HttpKeyValues _parameters;
+    private Optional<Buffer> _body;
 
-public sealed class HttpRequest
-{
-    public HttpRequest()
+    public HttpMethod Method
     {
-        Method = HttpMethod.Get;
-        Url = String.Empty;
-        Headers = new();
-        Parameters = new();
-        Body = Optional<Buffer>.None;
+        get => _method;
+        set => _method = value;
     }
 
-    public HttpRequest(
-        HttpMethod method,
-        string url,
-        Dictionary<string, string> headers,
-        Dictionary<string, string> parameters,
-        Optional<Buffer> body
-    )
+    public string Url
     {
-        Method = method;
-        Url = url;
-        Headers = headers;
-        Parameters = parameters;
-        Body = body;
+        get => _url.ToString();
+        set => _url = InteropString.FromString(value);
     }
 
-    internal static HttpRequest From(HttpRequestImpl impl)
+    public IReadOnlyDictionary<string, string> Headers
     {
-        return new HttpRequest(
-            impl.Method,
-            impl.Url.ToString(),
-            new(), //impl.Headers.ToDictionary(),
-            new(), //impl.Parameters.ToDictionary(),
-            impl.Body
-        );
+        get => _headers;
+        set => _headers = HttpKeyValues.FromDictionary(value);
     }
 
-    internal HttpRequestImpl ToInterop()
+    public IReadOnlyDictionary<string, string> Parameters
     {
-        return new HttpRequestImpl
-        {
-            Method = this.Method,
-            Url = InteropString.FromString(this.Url),
-            Headers = HttpKeyValues.FromDictionary(this.Headers),
-            Parameters = HttpKeyValues.FromDictionary(this.Parameters),
-            Body = this.Body,
-        };
+        get => _parameters;
+        set => _parameters = HttpKeyValues.FromDictionary(value);
     }
 
-    public HttpMethod Method { get; set; }
-    public string Url { get; set; }
-    public Dictionary<string, string> Headers { get; set; }
-    public Dictionary<string, string> Parameters { get; set; }
-
-    public Optional<Buffer> Body { get; set; }
+    public Optional<Buffer> Body
+    {
+        get => _body;
+        set => _body = value;
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe readonly struct HttpKeyValues
+public unsafe readonly struct HttpKeyValues : IReadOnlyDictionary<string, string>
 {
     private readonly HttpKeyValue* _valuesPtr;
     private readonly int _valuesLen;
@@ -120,18 +108,72 @@ public unsafe readonly struct HttpKeyValues
         return new HttpKeyValues(unmanagedValues, dictionary.Count);
     }
 
-    public Dictionary<string, string> ToDictionary()
-    {
-        var dict = new Dictionary<string, string>();
-        foreach (var entry in AsSpan())
-        {
-            dict[entry.Key.ToString()] = entry.Value.ToString();
-        }
-        return dict;
-    }
-
     public Span<HttpKeyValue> AsSpan()
         => new Span<HttpKeyValue>(_valuesPtr, _valuesLen);
+    
+    // IReadOnlyDictionary
+    public bool ContainsKey(string key) => false;
+    public bool TryGetValue(string key, out string value)
+    {
+        foreach (var entry in AsSpan())
+        {
+            if (entry.Key.ToString() == key)
+            {
+                value = entry.Value.ToString();
+                return true;
+            }
+        }
+        value = String.Empty;
+        return false;
+    }
+    public string this[string key] => TryGetValue(key, out var value) ? value : throw new KeyNotFoundException(key);
+    public IEnumerable<string> Keys => this.Select(kvp => kvp.Key);
+    public IEnumerable<string> Values => this.Select(kvp => kvp.Value);
+    public int Count => _valuesLen;
+    public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => new Enumerator(_valuesPtr, _valuesLen);
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+
+    // We can't lazy enumerate by foreach-yielding over a Span because
+    // ref struct so POINTER ARITHMETIC AVENGERS ASSEMBLE
+    private struct Enumerator : IEnumerator<KeyValuePair<string, string>>
+    {
+        private HttpKeyValue* _valuesPtr;
+        private int _valuesLen;
+        private int _index = -1;
+
+        public Enumerator(HttpKeyValue* valuesPtr, int valuesLen)
+        {
+            _valuesPtr = valuesPtr;
+            _valuesLen = valuesLen;
+        }
+
+        public KeyValuePair<string, string> Current
+        {
+            get
+            {
+                if (_index < 0 || _index >= _valuesLen)
+                {
+                    throw new InvalidOperationException();
+                }
+                var ptr = _valuesPtr + _index;
+                return KeyValuePair.Create(ptr->Key.ToString(), ptr->Value.ToString());
+            }
+        }
+
+        public bool MoveNext()
+        {
+            ++_index;
+            return _index < _valuesLen;
+        }
+
+        public void Reset()
+        {
+            throw new NotSupportedException();
+        }
+
+        object System.Collections.IEnumerator.Current => Current;
+        void IDisposable.Dispose() {}
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -150,5 +192,5 @@ public readonly struct HttpKeyValue
 internal static class OutboundHttpInterop
 {
     [MethodImpl(MethodImplOptions.InternalCall)]
-    internal static extern unsafe byte wasi_outbound_http_request(ref HttpRequestImpl req, ref HttpResponse ret0);
+    internal static extern unsafe byte wasi_outbound_http_request(ref HttpRequest req, ref HttpResponse ret0);
 }

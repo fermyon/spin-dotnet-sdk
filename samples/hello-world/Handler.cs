@@ -65,8 +65,8 @@ public static class Handler
             responseText.AppendLine($"Parameter '{p.Key}' had value '{p.Value}'");
         }
 
-        var bodyInfo = request.Body.TryGetValue(out var bodyBuffer) ?
-            $"The body (as a string) was: {Encoding.UTF8.GetString(bodyBuffer.AsSpan())}\n" :
+        var bodyInfo = request.Body.HasContent() ?
+            $"The body (as a string) was: {request.Body.AsString()}\n" :
             "The body was empty\n";
         responseText.AppendLine(bodyInfo);
 
@@ -101,8 +101,8 @@ public static class Handler
             responseText.AppendLine($"Parameter '{p.Key}' had value '{p.Value}'");
         }
 
-        var bodyInfo = request.Body.TryGetValue(out var bodyBuffer) ?
-            $"The body (as a string) was: {bodyBuffer.ToUTF8String()}\n" :
+        var bodyInfo = request.Body.HasContent() ?
+            $"The body (as a string) was: {request.Body.AsString()}\n" :
             "The body was empty\n";
         responseText.AppendLine(bodyInfo);
 

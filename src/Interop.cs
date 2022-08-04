@@ -30,6 +30,32 @@ public readonly struct Buffer
         => new InteropString(_ptr, _length);
 }
 
+public static class OptionalBufferExtensions
+{
+    public static bool HasContent(this Optional<Buffer> buffer)
+    {
+        return buffer.TryGetValue(out var _);
+    }
+
+    public static ReadOnlySpan<byte> AsBytes(this Optional<Buffer> buffer)
+    {
+        if (buffer.TryGetValue(out var value))
+        {
+            return value.AsSpan();
+        }
+        return new ReadOnlySpan<byte>(Array.Empty<byte>());
+    }
+
+    public static string AsString(this Optional<Buffer> buffer)
+    {
+        if (buffer.TryGetValue(out var value))
+        {
+            return value.ToUTF8String();
+        }
+        return String.Empty;
+    }
+}
+
 [StructLayout(LayoutKind.Sequential)]
 public readonly struct Optional<T>
     where T: struct

@@ -21,7 +21,7 @@ public struct HttpResponse
 {
     private static IReadOnlyDictionary<string, string> Empty = ImmutableDictionary.Create<string, string>();
     private int _status;
-    public Optional<HttpKeyValues> _headers;
+    private Optional<HttpKeyValues> _headers;
     public Optional<Buffer> Body;
 
     public HttpStatusCode StatusCode

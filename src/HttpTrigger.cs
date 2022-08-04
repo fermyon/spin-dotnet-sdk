@@ -6,5 +6,10 @@ namespace Fermyon.Spin.Sdk;
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class HttpHandlerAttribute : Attribute
 {
-    public string WarmupUrl { get; set; } = "/warmupz";
+    public string WarmupUrl { get; set; } = Warmup.DefaultWarmupUrl;
+}
+
+public static class Warmup
+{
+    public const string DefaultWarmupUrl = "/warmupz";
 }

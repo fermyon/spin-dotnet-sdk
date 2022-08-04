@@ -23,12 +23,6 @@ const char* dotnet_wasi_getentrypointassemblyname();
 const char* dotnet_wasi_getbundledfile(const char* name, int* out_length);
 void dotnet_wasi_registerbundledassemblies();
 
-unsigned long time_microseconds() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return 1000000 * tv.tv_sec + tv.tv_usec;
-}
-
 MonoObject* call_clr_request_handler(MonoMethod* handler, spin_http_request_t* req, MonoObject** exn) {
     *exn = NULL;
 
@@ -45,6 +39,12 @@ spin_http_response_t internal_error(const char* message) {
     response.body.val.ptr = (uint8_t*)message;
     response.body.val.len = strlen(message);
     return response;
+}
+
+unsigned long time_microseconds() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return 1000000 * tv.tv_sec + tv.tv_usec;
 }
 
 // If wizer is run on this module, these fields will be populated at build time and hence we'll be able

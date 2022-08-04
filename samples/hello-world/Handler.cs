@@ -6,10 +6,10 @@ namespace Fermyon.Spin.HelloWorld;
 
 public static class Handler
 {
-    [HttpHandler(WarmupUrl = "/scroggins")]
+    [HttpHandler]
     public static HttpResponse HandleHttpRequest(HttpRequest request) => request.Url switch
     {
-        "/scroggins" => WarmCodePath(request),
+        Warmup.DefaultWarmupUrl => WarmCodePath(request),
         "/redis" => UseRedis(request),
         _ => HandleRealRequest(request),
     };

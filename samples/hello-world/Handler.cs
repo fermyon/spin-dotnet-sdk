@@ -18,13 +18,6 @@ public static class Handler
     {
         var onboundRequest = new HttpRequest
         {
-            // .WithMethod(Fermyon.Spin.Sdk.HttpMethod.Delete)
-            // .WithUri("http://127.0.0.1:3001/hibblebibbdle")
-            // .WithBody(System.Text.Encoding.UTF8.GetBytes("see the little goblin, see his little feet"))
-            // .WithHeader("X-Outbound-Test", "From .NET")
-            // .WithHeader("Accept", "text/plain")
-            // .WithQuery("qqq", "qqqqqq");
-
             Method = Fermyon.Spin.Sdk.HttpMethod.Delete,
             Url = "http://127.0.0.1:3001/hibblebibbdle",
             Headers = HttpKeyValues.FromDictionary(new Dictionary<string, string>
@@ -43,7 +36,7 @@ public static class Handler
 
         try
         {
-            var response = OutboundHttp.Send(onboundRequest);
+            var response = HttpOutbound.Send(onboundRequest);
             var status = response.StatusCode;
             var onboundSucceeded = (int)status >= 200 && (int)status <= 299;
             var onboundResponseText = status == HttpStatusCode.OK ?

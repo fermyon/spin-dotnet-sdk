@@ -3,7 +3,7 @@ using System.Net.Http;
 
 namespace Fermyon.Spin.Sdk;
 
-public static class OutboundHttp
+public static class HttpOutbound
 {
     // TODO: wonder if we can use a HttpClient with custom HttpMessageHandler,
     // or HttpMessageInvoker?  Trouble is those are async and our handler can't

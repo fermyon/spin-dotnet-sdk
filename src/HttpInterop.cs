@@ -41,6 +41,12 @@ public struct HttpResponse
         get => Body.TryGetValue(out var buffer) ? buffer.ToInteropString().ToString() : null;
         set => Body = value is null ? Optional<Buffer>.None : Optional.From(Buffer.FromString(value));
     }
+
+    public IEnumerable<byte> BodyAsBytes
+    {
+        get => Body.TryGetValue(out var buffer) ? buffer : Enumerable.Empty<byte>();
+        set => Body = value is null ? Optional<Buffer>.None : Optional.From(Buffer.FromBytes(value));
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]

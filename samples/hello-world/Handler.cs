@@ -81,6 +81,7 @@ public static class Handler
                 { "X-TestHeader", "this is a test" },
             },
             BodyAsString = responseText.ToString(),
+            // BodyAsBytes = RandomTextBytes(),
         };
     }
 
@@ -117,6 +118,22 @@ public static class Handler
             BodyAsString = responseText.ToString(),
         };
     }
+
+    private static IEnumerable<byte> RandomTextBytes()
+    {
+        Random r = new Random();
+        var a = (int)'a';
+        while (true)
+        {
+            int rv = r.Next(25);
+            yield return (byte)(a + rv);
+            if (rv == 0)
+            {
+                yield break;
+            }
+        }
+    }
+
 
     private static HttpResponse UseRedis(HttpRequest request)
     {

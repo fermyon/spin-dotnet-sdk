@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct Buffer
+public readonly struct Buffer : IEnumerable<byte>
 {
     private readonly nint _ptr;
     private readonly int _length;
@@ -21,6 +21,18 @@ public readonly struct Buffer
         return new Buffer(interopString._utf8Ptr, interopString._utf8Length);
     }
 
+    public static unsafe Buffer FromBytes(IEnumerable<byte> value)
+    {
+        // We materialise this so as to get its length and avoid traversing twice,
+        // but it does seem wasteful.  TODO: better way?
+        var source = new Span<byte>(value.ToArray());
+        var exactByteCount = source.Length;
+        var mem = Marshal.AllocHGlobal(exactByteCount);
+        var buffer = new Span<byte>((void*)mem, exactByteCount);
+        source.CopyTo(buffer);
+        return new Buffer(mem, exactByteCount);
+    }
+
     public string ToUTF8String()
     {
         return Encoding.UTF8.GetString(this.AsSpan());
@@ -28,6 +40,50 @@ public readonly struct Buffer
 
     internal InteropString ToInteropString()
         => new InteropString(_ptr, _length);
+
+    public IEnumerator<byte> GetEnumerator() => new Enumerator(_ptr, _length);
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    
+    private unsafe struct Enumerator : IEnumerator<byte>
+    {
+        private readonly byte* _ptr;
+        private readonly int _length;
+        private int _index = -1;
+
+        public Enumerator(nint ptr, int length)
+        {
+            _ptr = (byte*)ptr;
+            _length = length;
+        }
+
+        public byte Current
+        {
+            get
+            {
+                if (_index < 0 || _index >= _length)
+                {
+                    throw new InvalidOperationException();
+                }
+                var ptr = _ptr + _index;
+                return *ptr;
+            }
+        }
+
+        public bool MoveNext()
+        {
+            ++_index;
+            return _index < _length;
+        }
+
+        public void Reset()
+        {
+            throw new NotSupportedException();
+        }
+
+        object System.Collections.IEnumerator.Current => Current;
+        void IDisposable.Dispose() {}
+    }
+
 }
 
 public static class OptionalBufferExtensions

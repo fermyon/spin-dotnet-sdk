@@ -233,3 +233,29 @@ public readonly struct InteropString
         return new InteropString(mem, byteCount);
     }
 }
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe readonly struct InteropStringList
+{
+    private readonly InteropString* _ptr;
+    private readonly int _len;
+
+    internal InteropStringList(InteropString* ptr, int length)
+    {
+        _ptr = ptr;
+        _len = length;
+    }
+
+    internal static InteropStringList FromStrings(string[] values)
+    {
+        var unmanagedValues = (InteropString*)Marshal.AllocHGlobal(values.Length * sizeof(InteropString));
+        var span = new Span<InteropString>(unmanagedValues, values.Length);
+        var index = 0;
+        foreach (var value in values)
+        {
+            span[index] = InteropString.FromString(value);
+            index++;
+        }
+        return new InteropStringList(unmanagedValues, values.Length);
+    }
+}

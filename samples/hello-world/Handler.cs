@@ -16,6 +16,7 @@ public static class Handler
         return request.Url switch
         {
             "/redis" => UseRedis(request),
+            "/pg" => UsePostgres(request),
             _ => EchoRequestInfo(request),
         };
     }
@@ -158,6 +159,30 @@ public static class Handler
         {
             StatusCode = HttpStatusCode.OK,
             BodyAsString = res
+        };
+    }
+
+    private static HttpResponse UsePostgres(HttpRequest request)
+    {
+        var connectionString = "user=ivan password=pgXXXXXX$ dbname=ivantest host=127.0.0.1";
+
+        var result = PostgresOutbound.Query(connectionString, "SELECT * FROM test");
+
+        var responseText = new StringBuilder();
+
+        responseText.AppendLine($"Got {result.Count} row(s)");
+
+        string FmtEntry(Buffer b) => String.Join("", b.Select(by => by.ToString("x2")));
+
+        foreach (var row in result)
+        {
+            responseText.AppendLine($"ROW: [{String.Join(" | ", row.Select(FmtEntry))}]");
+        }
+
+        return new HttpResponse
+        {
+            StatusCode = HttpStatusCode.OK,
+            BodyAsString = responseText.ToString(),
         };
     }
 

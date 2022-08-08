@@ -259,3 +259,56 @@ public unsafe readonly struct InteropStringList
         return new InteropStringList(unmanagedValues, values.Length);
     }
 }
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe readonly struct InteropList<T> : IEnumerable<T>
+    where T: unmanaged
+{
+    internal readonly T* _ptr;
+    internal readonly int _len;
+
+    public int Count => _len;
+
+    public IEnumerator<T> GetEnumerator() => new Enumerator(_ptr, _len);
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+
+    private struct Enumerator : IEnumerator<T>
+    {
+        private T* _ptr;
+        private int _len;
+        private int _index = -1;
+
+        public Enumerator(T* ptr, int len)
+        {
+            _ptr = ptr;
+            _len = len;
+        }
+
+        public T Current
+        {
+            get
+            {
+                if (_index < 0 || _index >= _len)
+                {
+                    throw new InvalidOperationException();
+                }
+                var ptr = _ptr + _index;
+                return *ptr;
+            }
+        }
+
+        public bool MoveNext()
+        {
+            ++_index;
+            return _index < _len;
+        }
+
+        public void Reset()
+        {
+            throw new NotSupportedException();
+        }
+
+        object System.Collections.IEnumerator.Current => Current;
+        void IDisposable.Dispose() {}
+    }
+}

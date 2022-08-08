@@ -171,6 +171,7 @@ public static class Handler
         var responseText = new StringBuilder();
 
         responseText.AppendLine($"Got {result.Rows.Count} row(s)");
+        responseText.AppendLine($"COL: [{String.Join(" | ", result.Columns.Select(FmtCol))}]");
 
         string FmtEntry(DbValue v)
         {
@@ -200,5 +201,10 @@ public static class Handler
             return "<no headers>";
         }
         return String.Join(" / ", headers.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+    }
+
+    private static string FmtCol(PgColumn c)
+    {
+        return $"{c.Name} ({c.DataType})";
     }
 }

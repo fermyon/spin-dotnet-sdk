@@ -62,11 +62,17 @@ extern "C"
   } outbound_pg_row_t;
   void outbound_pg_row_free(outbound_pg_row_t *ptr);
   typedef struct {
+    outbound_pg_column_t *ptr;
+    size_t len;
+  } outbound_pg_list_column_t;
+  void outbound_pg_list_column_free(outbound_pg_list_column_t *ptr);
+  typedef struct {
     outbound_pg_row_t *ptr;
     size_t len;
   } outbound_pg_list_row_t;
   void outbound_pg_list_row_free(outbound_pg_list_row_t *ptr);
   typedef struct {
+    outbound_pg_list_column_t columns;
     outbound_pg_list_row_t rows;
   } outbound_pg_row_set_t;
   void outbound_pg_row_set_free(outbound_pg_row_set_t *ptr);

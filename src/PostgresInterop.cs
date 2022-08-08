@@ -150,10 +150,31 @@ public unsafe readonly struct PgRows : IEnumerable<PgRow> {
     }
 }
 
+public enum PgDataType : byte
+{
+    OUTBOUND_PG_DB_DATA_TYPE_BOOLEAN = 0,
+    OUTBOUND_PG_DB_DATA_TYPE_INT32 = 1,
+    OUTBOUND_PG_DB_DATA_TYPE_INT64 = 2,
+    OUTBOUND_PG_DB_DATA_TYPE_DB_STRING = 3,
+    OUTBOUND_PG_DB_DATA_TYPE_OTHER = 4,
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe readonly struct PgColumn
+{
+    internal readonly InteropString name;
+    internal readonly PgDataType data_type;
+
+    public string Name => name.ToString();
+    public PgDataType DataType => data_type;
+}
+
 [StructLayout(LayoutKind.Sequential)]
 public unsafe readonly struct PgRowSet {
+    internal readonly InteropList<PgColumn> _columns;
     internal readonly PgRows _rows;
 
+    public IEnumerable<PgColumn> Columns => _columns;
     public PgRows Rows => _rows;
 }
 

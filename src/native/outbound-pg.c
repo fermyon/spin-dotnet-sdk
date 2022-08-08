@@ -1,8 +1,6 @@
 #include <stdlib.h>
 #include "outbound-pg.h"
 
-#include <stdio.h>
-
 __attribute__((weak, export_name("canonical_abi_realloc")))
 void *canonical_abi_realloc(
 void *ptr,
@@ -75,6 +73,12 @@ void outbound_pg_row_free(outbound_pg_row_t *ptr) {
   }
   canonical_abi_free(ptr->ptr, ptr->len * 16, 8);
 }
+void outbound_pg_list_column_free(outbound_pg_list_column_t *ptr) {
+  for (size_t i = 0; i < ptr->len; i++) {
+    outbound_pg_column_free(&ptr->ptr[i]);
+  }
+  canonical_abi_free(ptr->ptr, ptr->len * 12, 4);
+}
 void outbound_pg_list_row_free(outbound_pg_list_row_t *ptr) {
   for (size_t i = 0; i < ptr->len; i++) {
     outbound_pg_row_free(&ptr->ptr[i]);
@@ -82,6 +86,7 @@ void outbound_pg_list_row_free(outbound_pg_list_row_t *ptr) {
   canonical_abi_free(ptr->ptr, ptr->len * 8, 4);
 }
 void outbound_pg_row_set_free(outbound_pg_row_set_t *ptr) {
+  outbound_pg_list_column_free(&ptr->columns);
   outbound_pg_list_row_free(&ptr->rows);
 }
 void outbound_pg_list_string_free(outbound_pg_list_string_t *ptr) {
@@ -105,7 +110,7 @@ void outbound_pg_expected_u64_pg_error_free(outbound_pg_expected_u64_pg_error_t 
 }
 
 __attribute__((aligned(8)))
-static uint8_t RET_AREA[16];
+static uint8_t RET_AREA[20];
 __attribute__((import_module("outbound-pg"), import_name("query")))
 void __wasm_import_outbound_pg_query(int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);
 void outbound_pg_query(outbound_pg_string_t *address, outbound_pg_string_t *statement, outbound_pg_list_string_t *params, outbound_pg_expected_row_set_pg_error_t *ret0) {
@@ -117,7 +122,8 @@ void outbound_pg_query(outbound_pg_string_t *address, outbound_pg_string_t *stat
       expected.is_err = false;
       
       expected.val.ok = (outbound_pg_row_set_t) {
-        (outbound_pg_list_row_t) { (outbound_pg_row_t*)(*((int32_t*) (ptr + 4))), (size_t)(*((int32_t*) (ptr + 8))) },
+        (outbound_pg_list_column_t) { (outbound_pg_column_t*)(*((int32_t*) (ptr + 4))), (size_t)(*((int32_t*) (ptr + 8))) },
+        (outbound_pg_list_row_t) { (outbound_pg_row_t*)(*((int32_t*) (ptr + 12))), (size_t)(*((int32_t*) (ptr + 16))) },
       };
       break;
     }

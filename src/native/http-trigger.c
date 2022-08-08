@@ -63,7 +63,8 @@ void ensure_preinitialized() {
         mono_wasm_load_runtime("", 0);
         spin_attach_internal_calls();
 
-        entry_points_err_t entry_points_err = find_entry_points("Fermyon.Spin.Sdk.HttpHandlerAttribute", "HttpRequestInterop", &preinitialized_handler);
+        MonoObject* attr_obj;
+        entry_points_err_t entry_points_err = find_entry_points("Fermyon.Spin.Sdk.HttpHandlerAttribute", &attr_obj, &preinitialized_handler);
         if (entry_points_err) {
             if (entry_points_err == EP_ERR_NO_HANDLER_METHOD) {
                 preinitialized_error = "Assembly does not contain a method with HttpHandlerAttribute";
@@ -73,11 +74,19 @@ void ensure_preinitialized() {
             return;
         }
 
+        char* warmup_url = "/warmupz";
+        if (attr_obj) {
+            MonoString* warmup_str;
+            if (get_property(attr_obj, "WarmupUrl", (MonoObject**)&warmup_str) == GET_MEMBER_ERR_OK) {
+                warmup_url = mono_wasm_string_get_utf8(warmup_str);
+            }
+        }
+
         // To warm the interpreter, we need to run the main code path that is going to execute per-request. That way the preinitialized
         // binary is already ready to go at full speed.
         spin_http_request_t fake_req = {
             .method = SPIN_HTTP_METHOD_GET,
-            .uri = { "/info", 5 },
+            .uri = { warmup_url, strlen(warmup_url) },
             .headers = {.len = 1, .ptr = (spin_http_tuple2_string_string_t[]){{
                 {"key", 3}, {"val", 3}
             }}},

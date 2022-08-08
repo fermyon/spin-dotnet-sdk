@@ -267,7 +267,23 @@ public unsafe readonly struct InteropList<T> : IEnumerable<T>
     internal readonly T* _ptr;
     internal readonly int _len;
 
+    private InteropList(T* ptr, int len)
+    {
+        _ptr = ptr;
+        _len = len;
+    }
+
     public int Count => _len;
+
+    public static InteropList<T> From(T[] values)
+    {
+        var sourceSpan = new Span<T>(values);
+
+        var unmanagedValues = (T*)Marshal.AllocHGlobal(values.Length * sizeof(T));
+        var span = new Span<T>(unmanagedValues, values.Length);
+        sourceSpan.CopyTo(span);
+        return new InteropList<T>(unmanagedValues, values.Length);
+    }
 
     public IEnumerator<T> GetEnumerator() => new Enumerator(_ptr, _len);
     System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();

@@ -57,6 +57,21 @@ extern "C"
   #define OUTBOUND_PG_DB_VALUE_UNSUPPORTED 5
   void outbound_pg_db_value_free(outbound_pg_db_value_t *ptr);
   typedef struct {
+    uint8_t tag;
+    union {
+      bool boolean;
+      int32_t int32;
+      int64_t int64;
+      outbound_pg_string_t db_string;
+    } val;
+  } outbound_pg_parameter_value_t;
+  #define OUTBOUND_PG_PARAMETER_VALUE_BOOLEAN 0
+  #define OUTBOUND_PG_PARAMETER_VALUE_INT32 1
+  #define OUTBOUND_PG_PARAMETER_VALUE_INT64 2
+  #define OUTBOUND_PG_PARAMETER_VALUE_DB_STRING 3
+  #define OUTBOUND_PG_PARAMETER_VALUE_DB_NULL 4
+  void outbound_pg_parameter_value_free(outbound_pg_parameter_value_t *ptr);
+  typedef struct {
     outbound_pg_db_value_t *ptr;
     size_t len;
   } outbound_pg_row_t;
@@ -77,10 +92,10 @@ extern "C"
   } outbound_pg_row_set_t;
   void outbound_pg_row_set_free(outbound_pg_row_set_t *ptr);
   typedef struct {
-    outbound_pg_string_t *ptr;
+    outbound_pg_parameter_value_t *ptr;
     size_t len;
-  } outbound_pg_list_string_t;
-  void outbound_pg_list_string_free(outbound_pg_list_string_t *ptr);
+  } outbound_pg_list_parameter_value_t;
+  void outbound_pg_list_parameter_value_free(outbound_pg_list_parameter_value_t *ptr);
   typedef struct {
     bool is_err;
     union {
@@ -97,8 +112,8 @@ extern "C"
     } val;
   } outbound_pg_expected_u64_pg_error_t;
   void outbound_pg_expected_u64_pg_error_free(outbound_pg_expected_u64_pg_error_t *ptr);
-  void outbound_pg_query(outbound_pg_string_t *address, outbound_pg_string_t *statement, outbound_pg_list_string_t *params, outbound_pg_expected_row_set_pg_error_t *ret0);
-  void outbound_pg_execute(outbound_pg_string_t *address, outbound_pg_string_t *statement, outbound_pg_list_string_t *params, outbound_pg_expected_u64_pg_error_t *ret0);
+  void outbound_pg_query(outbound_pg_string_t *address, outbound_pg_string_t *statement, outbound_pg_list_parameter_value_t *params, outbound_pg_expected_row_set_pg_error_t *ret0);
+  void outbound_pg_execute(outbound_pg_string_t *address, outbound_pg_string_t *statement, outbound_pg_list_parameter_value_t *params, outbound_pg_expected_u64_pg_error_t *ret0);
   #ifdef __cplusplus
 }
 #endif

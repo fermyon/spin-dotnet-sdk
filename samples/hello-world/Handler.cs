@@ -17,6 +17,7 @@ public static class Handler
         {
             "/redis" => UseRedis(request),
             "/pg" => UsePostgres(request),
+            "/pgins" => UsePostgresExec(request),
             _ => EchoRequestInfo(request),
         };
     }
@@ -162,7 +163,7 @@ public static class Handler
         };
     }
 
-    private static HttpResponse UsePostgres(HttpRequest request)
+    private static HttpResponse UsePostgresQuery(HttpRequest request)
     {
         var connectionString = "user=ivan password=pg314159$ dbname=ivantest host=127.0.0.1";
 
@@ -191,6 +192,22 @@ public static class Handler
         {
             StatusCode = HttpStatusCode.OK,
             BodyAsString = responseText.ToString(),
+        };
+    }
+
+    private static HttpResponse UsePostgresExec(HttpRequest request)
+    {
+        var connectionString = "user=ivan password=pg314159$ dbname=ivantest host=127.0.0.1";
+
+        var id = new Random().Next(100000);
+        var result = PostgresOutbound.Execute(connectionString, "INSERT INTO test VALUES ($1, 'something', 'something else')", id);
+
+        var responseText = $"Updates {result} rows\n";
+
+        return new HttpResponse
+        {
+            StatusCode = HttpStatusCode.OK,
+            BodyAsString = responseText,
         };
     }
 

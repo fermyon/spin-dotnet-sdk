@@ -37,6 +37,75 @@ public unsafe readonly struct DbValue {
     }
 }
 
+[StructLayout(LayoutKind.Explicit)]
+public unsafe readonly struct ParameterValue {
+    internal const byte OUTBOUND_PG_PARAMETER_VALUE_BOOLEAN = 0;
+    internal const byte OUTBOUND_PG_PARAMETER_VALUE_INT32 = 1;
+    internal const byte OUTBOUND_PG_PARAMETER_VALUE_INT64 = 2;
+    internal const byte OUTBOUND_PG_PARAMETER_VALUE_DB_STRING = 3;
+    internal const byte OUTBOUND_PG_PARAMETER_VALUE_DB_NULL = 4;
+
+    public ParameterValue(bool value) : this()
+    {
+        tag = OUTBOUND_PG_PARAMETER_VALUE_BOOLEAN;
+        boolean = value;
+    }
+
+    public ParameterValue(int value) : this()
+    {
+        tag = OUTBOUND_PG_PARAMETER_VALUE_INT32;
+        int32 = value;
+    }
+
+    public ParameterValue(long value) : this()
+    {
+        tag = OUTBOUND_PG_PARAMETER_VALUE_INT64;
+        int64 = value;
+    }
+
+    public ParameterValue(string value) : this()
+    {
+        tag = OUTBOUND_PG_PARAMETER_VALUE_DB_STRING;
+        db_string = InteropString.FromString(value);
+    }
+
+    public ParameterValue(object? value) : this()
+    {
+        if (value is null)
+        {
+            tag = OUTBOUND_PG_PARAMETER_VALUE_DB_NULL;
+        }
+        else
+        {
+            throw new ArgumentException(nameof(value));
+        }
+    }
+
+    public static ParameterValue From(object? value)
+    {
+        return value switch
+        {
+            bool v => new ParameterValue(v),
+            int v => new ParameterValue(v),
+            long v => new ParameterValue(v),
+            string v => new ParameterValue(v),
+            null => new ParameterValue((object?)null),
+            _ => throw new ArgumentException(nameof(value))
+        };
+    }
+
+    [FieldOffset(0)]
+    internal readonly byte tag;
+    [FieldOffset(8)]
+    internal readonly bool boolean;
+    [FieldOffset(8)]
+    internal readonly Int32 int32;
+    [FieldOffset(8)]
+    internal readonly Int64 int64;
+    [FieldOffset(8)]
+    internal readonly InteropString db_string;
+}
+
 [StructLayout(LayoutKind.Sequential)]
 public unsafe readonly struct PgRow : IEnumerable<DbValue> {
     internal readonly DbValue* _ptr;
@@ -201,8 +270,8 @@ internal unsafe readonly struct PgRowSetOrError {
 internal static class OutboundPgInterop
 {
     [MethodImpl(MethodImplOptions.InternalCall)]
-    internal static extern unsafe void outbound_pg_query(ref InteropString address, ref InteropString statement, ref InteropStringList parameters, ref PgRowSetOrError ret0);
+    internal static extern unsafe void outbound_pg_query(ref InteropString address, ref InteropString statement, ref InteropList<ParameterValue> parameters, ref PgRowSetOrError ret0);
 
     [MethodImpl(MethodImplOptions.InternalCall)]
-    internal static extern unsafe void outbound_pg_execute(ref InteropString address, ref InteropString statement, ref InteropStringList parameters, ref PgU64OrError ret0);
+    internal static extern unsafe void outbound_pg_execute(ref InteropString address, ref InteropString statement, ref InteropList<ParameterValue> parameters, ref PgU64OrError ret0);
 }

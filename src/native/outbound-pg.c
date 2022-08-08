@@ -67,6 +67,14 @@ void outbound_pg_db_value_free(outbound_pg_db_value_t *ptr) {
     }
   }
 }
+void outbound_pg_parameter_value_free(outbound_pg_parameter_value_t *ptr) {
+  switch ((int32_t) ptr->tag) {
+    case 3: {
+      outbound_pg_string_free(&ptr->val.db_string);
+      break;
+    }
+  }
+}
 void outbound_pg_row_free(outbound_pg_row_t *ptr) {
   for (size_t i = 0; i < ptr->len; i++) {
     outbound_pg_db_value_free(&ptr->ptr[i]);
@@ -89,11 +97,11 @@ void outbound_pg_row_set_free(outbound_pg_row_set_t *ptr) {
   outbound_pg_list_column_free(&ptr->columns);
   outbound_pg_list_row_free(&ptr->rows);
 }
-void outbound_pg_list_string_free(outbound_pg_list_string_t *ptr) {
+void outbound_pg_list_parameter_value_free(outbound_pg_list_parameter_value_t *ptr) {
   for (size_t i = 0; i < ptr->len; i++) {
-    outbound_pg_string_free(&ptr->ptr[i]);
+    outbound_pg_parameter_value_free(&ptr->ptr[i]);
   }
-  canonical_abi_free(ptr->ptr, ptr->len * 8, 4);
+  canonical_abi_free(ptr->ptr, ptr->len * 16, 8);
 }
 void outbound_pg_expected_row_set_pg_error_free(outbound_pg_expected_row_set_pg_error_t *ptr) {
   if (!ptr->is_err) {
@@ -113,7 +121,7 @@ __attribute__((aligned(8)))
 static uint8_t RET_AREA[20];
 __attribute__((import_module("outbound-pg"), import_name("query")))
 void __wasm_import_outbound_pg_query(int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);
-void outbound_pg_query(outbound_pg_string_t *address, outbound_pg_string_t *statement, outbound_pg_list_string_t *params, outbound_pg_expected_row_set_pg_error_t *ret0) {
+void outbound_pg_query(outbound_pg_string_t *address, outbound_pg_string_t *statement, outbound_pg_list_parameter_value_t *params, outbound_pg_expected_row_set_pg_error_t *ret0) {
   int32_t ptr = (int32_t) &RET_AREA;
   __wasm_import_outbound_pg_query((int32_t) (*address).ptr, (int32_t) (*address).len, (int32_t) (*statement).ptr, (int32_t) (*statement).len, (int32_t) (*params).ptr, (int32_t) (*params).len, ptr);
   outbound_pg_expected_row_set_pg_error_t expected;
@@ -129,34 +137,34 @@ void outbound_pg_query(outbound_pg_string_t *address, outbound_pg_string_t *stat
     }
     case 1: {
       expected.is_err = true;
-      outbound_pg_pg_error_t variant0;
-      variant0.tag = (int32_t) (*((uint8_t*) (ptr + 4)));
-      switch ((int32_t) variant0.tag) {
+      outbound_pg_pg_error_t variant4;
+      variant4.tag = (int32_t) (*((uint8_t*) (ptr + 4)));
+      switch ((int32_t) variant4.tag) {
         case 0: {
           break;
         }
         case 1: {
-          variant0.val.connection_failed = (outbound_pg_string_t) { (char*)(*((int32_t*) (ptr + 8))), (size_t)(*((int32_t*) (ptr + 12))) };
+          variant4.val.connection_failed = (outbound_pg_string_t) { (char*)(*((int32_t*) (ptr + 8))), (size_t)(*((int32_t*) (ptr + 12))) };
           break;
         }
         case 2: {
-          variant0.val.query_failed = (outbound_pg_string_t) { (char*)(*((int32_t*) (ptr + 8))), (size_t)(*((int32_t*) (ptr + 12))) };
+          variant4.val.query_failed = (outbound_pg_string_t) { (char*)(*((int32_t*) (ptr + 8))), (size_t)(*((int32_t*) (ptr + 12))) };
           break;
         }
         case 3: {
-          variant0.val.other_error = (outbound_pg_string_t) { (char*)(*((int32_t*) (ptr + 8))), (size_t)(*((int32_t*) (ptr + 12))) };
+          variant4.val.other_error = (outbound_pg_string_t) { (char*)(*((int32_t*) (ptr + 8))), (size_t)(*((int32_t*) (ptr + 12))) };
           break;
         }
       }
       
-      expected.val.err = variant0;
+      expected.val.err = variant4;
       break;
     }
   }*ret0 = expected;
 }
 __attribute__((import_module("outbound-pg"), import_name("execute")))
 void __wasm_import_outbound_pg_execute(int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);
-void outbound_pg_execute(outbound_pg_string_t *address, outbound_pg_string_t *statement, outbound_pg_list_string_t *params, outbound_pg_expected_u64_pg_error_t *ret0) {
+void outbound_pg_execute(outbound_pg_string_t *address, outbound_pg_string_t *statement, outbound_pg_list_parameter_value_t *params, outbound_pg_expected_u64_pg_error_t *ret0) {
   int32_t ptr = (int32_t) &RET_AREA;
   __wasm_import_outbound_pg_execute((int32_t) (*address).ptr, (int32_t) (*address).len, (int32_t) (*statement).ptr, (int32_t) (*statement).len, (int32_t) (*params).ptr, (int32_t) (*params).len, ptr);
   outbound_pg_expected_u64_pg_error_t expected;

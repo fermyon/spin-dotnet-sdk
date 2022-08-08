@@ -164,17 +164,24 @@ public static class Handler
 
     private static HttpResponse UsePostgres(HttpRequest request)
     {
-        var connectionString = "user=ivan password=pgXXXXXX$ dbname=ivantest host=127.0.0.1";
+        var connectionString = "user=ivan password=pg314159$ dbname=ivantest host=127.0.0.1";
 
         var result = PostgresOutbound.Query(connectionString, "SELECT * FROM test");
 
         var responseText = new StringBuilder();
 
-        responseText.AppendLine($"Got {result.Count} row(s)");
+        responseText.AppendLine($"Got {result.Rows.Count} row(s)");
 
-        string FmtEntry(Buffer b) => String.Join("", b.Select(by => by.ToString("x2")));
+        string FmtEntry(DbValue v)
+        {
+            return v.Value() switch
+            {
+                null => "<DBNULL>",
+                var val => val.ToString() ?? "<NULL>",
+            };
+        }
 
-        foreach (var row in result)
+        foreach (var row in result.Rows)
         {
             responseText.AppendLine($"ROW: [{String.Join(" | ", row.Select(FmtEntry))}]");
         }

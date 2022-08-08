@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include "outbound-pg.h"
 
+#include <stdio.h>
+
 __attribute__((weak, export_name("canonical_abi_realloc")))
 void *canonical_abi_realloc(
 void *ptr,
@@ -40,8 +42,47 @@ void outbound_pg_string_free(outbound_pg_string_t *ret) {
   ret->ptr = NULL;
   ret->len = 0;
 }
-void outbound_pg_payload_free(outbound_pg_payload_t *ptr) {
-  canonical_abi_free(ptr->ptr, ptr->len * 1, 1);
+void outbound_pg_pg_error_free(outbound_pg_pg_error_t *ptr) {
+  switch ((int32_t) ptr->tag) {
+    case 1: {
+      outbound_pg_string_free(&ptr->val.connection_failed);
+      break;
+    }
+    case 2: {
+      outbound_pg_string_free(&ptr->val.query_failed);
+      break;
+    }
+    case 3: {
+      outbound_pg_string_free(&ptr->val.other_error);
+      break;
+    }
+  }
+}
+void outbound_pg_column_free(outbound_pg_column_t *ptr) {
+  outbound_pg_string_free(&ptr->name);
+}
+void outbound_pg_db_value_free(outbound_pg_db_value_t *ptr) {
+  switch ((int32_t) ptr->tag) {
+    case 3: {
+      outbound_pg_string_free(&ptr->val.db_string);
+      break;
+    }
+  }
+}
+void outbound_pg_row_free(outbound_pg_row_t *ptr) {
+  for (size_t i = 0; i < ptr->len; i++) {
+    outbound_pg_db_value_free(&ptr->ptr[i]);
+  }
+  canonical_abi_free(ptr->ptr, ptr->len * 16, 8);
+}
+void outbound_pg_list_row_free(outbound_pg_list_row_t *ptr) {
+  for (size_t i = 0; i < ptr->len; i++) {
+    outbound_pg_row_free(&ptr->ptr[i]);
+  }
+  canonical_abi_free(ptr->ptr, ptr->len * 8, 4);
+}
+void outbound_pg_row_set_free(outbound_pg_row_set_t *ptr) {
+  outbound_pg_list_row_free(&ptr->rows);
 }
 void outbound_pg_list_string_free(outbound_pg_list_string_t *ptr) {
   for (size_t i = 0; i < ptr->len; i++) {
@@ -49,63 +90,70 @@ void outbound_pg_list_string_free(outbound_pg_list_string_t *ptr) {
   }
   canonical_abi_free(ptr->ptr, ptr->len * 8, 4);
 }
-void outbound_pg_list_payload_free(outbound_pg_list_payload_t *ptr) {
-  for (size_t i = 0; i < ptr->len; i++) {
-    outbound_pg_payload_free(&ptr->ptr[i]);
+void outbound_pg_expected_row_set_pg_error_free(outbound_pg_expected_row_set_pg_error_t *ptr) {
+  if (!ptr->is_err) {
+    outbound_pg_row_set_free(&ptr->val.ok);
+  } else {
+    outbound_pg_pg_error_free(&ptr->val.err);
   }
-  canonical_abi_free(ptr->ptr, ptr->len * 8, 4);
 }
-void outbound_pg_list_list_payload_free(outbound_pg_list_list_payload_t *ptr) {
-  for (size_t i = 0; i < ptr->len; i++) {
-    outbound_pg_list_payload_free(&ptr->ptr[i]);
+void outbound_pg_expected_u64_pg_error_free(outbound_pg_expected_u64_pg_error_t *ptr) {
+  if (!ptr->is_err) {
+  } else {
+    outbound_pg_pg_error_free(&ptr->val.err);
   }
-  canonical_abi_free(ptr->ptr, ptr->len * 8, 4);
 }
-typedef struct {
-  bool is_err;
-  union {
-    outbound_pg_list_list_payload_t ok;
-    outbound_pg_error_t err;
-  } val;
-} outbound_pg_expected_list_list_payload_error_t;
-typedef struct {
-  bool is_err;
-  union {
-    uint64_t ok;
-    outbound_pg_error_t err;
-  } val;
-} outbound_pg_expected_u64_error_t;
 
 __attribute__((aligned(8)))
 static uint8_t RET_AREA[16];
 __attribute__((import_module("outbound-pg"), import_name("query")))
 void __wasm_import_outbound_pg_query(int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);
-outbound_pg_error_t outbound_pg_query(outbound_pg_string_t *address, outbound_pg_string_t *statement, outbound_pg_list_string_t *params, outbound_pg_list_list_payload_t *ret0) {
+void outbound_pg_query(outbound_pg_string_t *address, outbound_pg_string_t *statement, outbound_pg_list_string_t *params, outbound_pg_expected_row_set_pg_error_t *ret0) {
   int32_t ptr = (int32_t) &RET_AREA;
   __wasm_import_outbound_pg_query((int32_t) (*address).ptr, (int32_t) (*address).len, (int32_t) (*statement).ptr, (int32_t) (*statement).len, (int32_t) (*params).ptr, (int32_t) (*params).len, ptr);
-  outbound_pg_expected_list_list_payload_error_t expected;
+  outbound_pg_expected_row_set_pg_error_t expected;
   switch ((int32_t) (*((uint8_t*) (ptr + 0)))) {
     case 0: {
       expected.is_err = false;
       
-      expected.val.ok = (outbound_pg_list_list_payload_t) { (outbound_pg_list_payload_t*)(*((int32_t*) (ptr + 4))), (size_t)(*((int32_t*) (ptr + 8))) };
+      expected.val.ok = (outbound_pg_row_set_t) {
+        (outbound_pg_list_row_t) { (outbound_pg_row_t*)(*((int32_t*) (ptr + 4))), (size_t)(*((int32_t*) (ptr + 8))) },
+      };
       break;
     }
     case 1: {
       expected.is_err = true;
+      outbound_pg_pg_error_t variant0;
+      variant0.tag = (int32_t) (*((uint8_t*) (ptr + 4)));
+      switch ((int32_t) variant0.tag) {
+        case 0: {
+          break;
+        }
+        case 1: {
+          variant0.val.connection_failed = (outbound_pg_string_t) { (char*)(*((int32_t*) (ptr + 8))), (size_t)(*((int32_t*) (ptr + 12))) };
+          break;
+        }
+        case 2: {
+          variant0.val.query_failed = (outbound_pg_string_t) { (char*)(*((int32_t*) (ptr + 8))), (size_t)(*((int32_t*) (ptr + 12))) };
+          break;
+        }
+        case 3: {
+          variant0.val.other_error = (outbound_pg_string_t) { (char*)(*((int32_t*) (ptr + 8))), (size_t)(*((int32_t*) (ptr + 12))) };
+          break;
+        }
+      }
       
-      expected.val.err = (int32_t) (*((uint8_t*) (ptr + 4)));
+      expected.val.err = variant0;
       break;
     }
-  }*ret0 = expected.val.ok;
-  return expected.is_err ? expected.val.err : -1;
+  }*ret0 = expected;
 }
 __attribute__((import_module("outbound-pg"), import_name("execute")))
 void __wasm_import_outbound_pg_execute(int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);
-outbound_pg_error_t outbound_pg_execute(outbound_pg_string_t *address, outbound_pg_string_t *statement, outbound_pg_list_string_t *params, uint64_t *ret0) {
+void outbound_pg_execute(outbound_pg_string_t *address, outbound_pg_string_t *statement, outbound_pg_list_string_t *params, outbound_pg_expected_u64_pg_error_t *ret0) {
   int32_t ptr = (int32_t) &RET_AREA;
   __wasm_import_outbound_pg_execute((int32_t) (*address).ptr, (int32_t) (*address).len, (int32_t) (*statement).ptr, (int32_t) (*statement).len, (int32_t) (*params).ptr, (int32_t) (*params).len, ptr);
-  outbound_pg_expected_u64_error_t expected;
+  outbound_pg_expected_u64_pg_error_t expected;
   switch ((int32_t) (*((uint8_t*) (ptr + 0)))) {
     case 0: {
       expected.is_err = false;
@@ -115,10 +163,28 @@ outbound_pg_error_t outbound_pg_execute(outbound_pg_string_t *address, outbound_
     }
     case 1: {
       expected.is_err = true;
+      outbound_pg_pg_error_t variant;
+      variant.tag = (int32_t) (*((uint8_t*) (ptr + 8)));
+      switch ((int32_t) variant.tag) {
+        case 0: {
+          break;
+        }
+        case 1: {
+          variant.val.connection_failed = (outbound_pg_string_t) { (char*)(*((int32_t*) (ptr + 12))), (size_t)(*((int32_t*) (ptr + 16))) };
+          break;
+        }
+        case 2: {
+          variant.val.query_failed = (outbound_pg_string_t) { (char*)(*((int32_t*) (ptr + 12))), (size_t)(*((int32_t*) (ptr + 16))) };
+          break;
+        }
+        case 3: {
+          variant.val.other_error = (outbound_pg_string_t) { (char*)(*((int32_t*) (ptr + 12))), (size_t)(*((int32_t*) (ptr + 16))) };
+          break;
+        }
+      }
       
-      expected.val.err = (int32_t) (*((uint8_t*) (ptr + 8)));
+      expected.val.err = variant;
       break;
     }
-  }*ret0 = expected.val.ok;
-  return expected.is_err ? expected.val.err : -1;
+  }*ret0 = expected;
 }

@@ -5,43 +5,87 @@ using System.Runtime.InteropServices;
 
 namespace Fermyon.Spin.Sdk;
 
+/// <summary>
+/// An HTTP method.
+/// </summary>
 public enum HttpMethod : byte
 {
+    /// <summary>
+    /// The GET method.
+    /// </summary>
     Get = 0,
+    /// <summary>
+    /// The POST method.
+    /// </summary>
     Post = 1,
+    /// <summary>
+    /// The PUT method.
+    /// </summary>
     Put = 2,
+    /// <summary>
+    /// The DELETE method.
+    /// </summary>
     Delete = 3,
+    /// <summary>
+    /// The PATCH method.
+    /// </summary>
     Patch = 4,
+    /// <summary>
+    /// The HEAD method.
+    /// </summary>
     Head = 5,
+    /// <summary>
+    /// The OPTIONS method.
+    /// </summary>
     Options = 6,
 }
 
+/// <summary>
+/// A HTTP response.
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct HttpResponse
 {
     private static IReadOnlyDictionary<string, string> Empty = ImmutableDictionary.Create<string, string>();
     private int _status;
     private Optional<HttpKeyValues> _headers;
+    /// <summary>
+    /// Gets or sets the response body.  This provides access to the raw Wasm Canonical ABI
+    /// representation - applications will usually find it move convenient to use BodyAsString
+    /// or BodyAsBytes.
+    /// </summary>
     public Optional<Buffer> Body;
 
+    /// <summary>
+    /// Gets or sets the response HTTP status code.
+    /// </summary>
     public HttpStatusCode StatusCode
     {
         get => (HttpStatusCode)_status;
         set => _status = (int)value;
     }
 
+    /// <summary>
+    /// Gets or sets the response headers.
+    /// </summary>
     public IReadOnlyDictionary<string, string> Headers
     {
         get => _headers.TryGetValue(out var headers) ? headers : Empty;
         set => _headers = value.Count == 0 ? Optional<HttpKeyValues>.None : Optional.From(HttpKeyValues.FromDictionary(value));
     }
 
+    /// <summary>
+    /// Gets or sets the response body as a string.
+    /// </summary>
     public string? BodyAsString
     {
         get => Body.TryGetValue(out var buffer) ? buffer.ToInteropString().ToString() : null;
         set => Body = value is null ? Optional<Buffer>.None : Optional.From(Buffer.FromString(value));
     }
 
+    /// <summary>
+    /// Gets or sets the response body as a sequence of bytes.
+    /// </summary>
     public IEnumerable<byte> BodyAsBytes
     {
         get => Body.TryGetValue(out var buffer) ? buffer : Enumerable.Empty<byte>();
@@ -49,6 +93,9 @@ public struct HttpResponse
     }
 }
 
+/// <summary>
+/// A HTTP request.
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct HttpRequest
 {
@@ -58,30 +105,45 @@ public struct HttpRequest
     private HttpKeyValues _parameters;
     private Optional<Buffer> _body;
 
+    /// <summary>
+    /// Gets or sets the request method.
+    /// </summary>
     public HttpMethod Method
     {
         get => _method;
         set => _method = value;
     }
 
+    /// <summary>
+    /// Gets or sets the request URL.
+    /// </summary>
     public string Url
     {
         get => _url.ToString();
         set => _url = InteropString.FromString(value);
     }
 
+    /// <summary>
+    /// Gets or sets the request headers.
+    /// </summary>
     public IReadOnlyDictionary<string, string> Headers
     {
         get => _headers;
         set => _headers = HttpKeyValues.FromDictionary(value);
     }
 
+    /// <summary>
+    /// Gets or sets the request query parameters.
+    /// </summary>
     public IReadOnlyDictionary<string, string> Parameters
     {
         get => _parameters;
         set => _parameters = HttpKeyValues.FromDictionary(value);
     }
 
+    /// <summary>
+    /// Gets or sets the request body.
+    /// </summary>
     public Optional<Buffer> Body
     {
         get => _body;
@@ -89,6 +151,10 @@ public struct HttpRequest
     }
 }
 
+/// <summary>
+/// A set of key-value pairs in the Canonical ABI, such as headers or query string parameters.
+/// </summary>
+/// <inheritdoc />
 [StructLayout(LayoutKind.Sequential)]
 public unsafe readonly struct HttpKeyValues : IReadOnlyDictionary<string, string>
 {
@@ -101,6 +167,9 @@ public unsafe readonly struct HttpKeyValues : IReadOnlyDictionary<string, string
         _valuesLen = length;
     }
 
+    /// <summary>
+    /// Createa a Canonical ABI representation from a .NET dictionary.
+    /// </summary>
     public static HttpKeyValues FromDictionary(IReadOnlyDictionary<string, string> dictionary)
     {
         var unmanagedValues = (HttpKeyValue*)Marshal.AllocHGlobal(dictionary.Count * sizeof(HttpKeyValue));
@@ -114,11 +183,14 @@ public unsafe readonly struct HttpKeyValues : IReadOnlyDictionary<string, string
         return new HttpKeyValues(unmanagedValues, dictionary.Count);
     }
 
-    public Span<HttpKeyValue> AsSpan()
+    private Span<HttpKeyValue> AsSpan()
         => new Span<HttpKeyValue>(_valuesPtr, _valuesLen);
     
     // IReadOnlyDictionary
+
+    /// <inheritdoc />
     public bool ContainsKey(string key) => false;
+    /// <inheritdoc />
     public bool TryGetValue(string key, out string value)
     {
         foreach (var entry in AsSpan())
@@ -132,10 +204,15 @@ public unsafe readonly struct HttpKeyValues : IReadOnlyDictionary<string, string
         value = String.Empty;
         return false;
     }
+    /// <inheritdoc />
     public string this[string key] => TryGetValue(key, out var value) ? value : throw new KeyNotFoundException(key);
+    /// <inheritdoc />
     public IEnumerable<string> Keys => this.Select(kvp => kvp.Key);
+    /// <inheritdoc />
     public IEnumerable<string> Values => this.Select(kvp => kvp.Value);
+    /// <inheritdoc />
     public int Count => _valuesLen;
+    /// <inheritdoc />
     public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => new Enumerator(_valuesPtr, _valuesLen);
     System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -183,7 +260,7 @@ public unsafe readonly struct HttpKeyValues : IReadOnlyDictionary<string, string
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct HttpKeyValue
+internal readonly struct HttpKeyValue
 {
     public readonly InteropString Key;
     public readonly InteropString Value;

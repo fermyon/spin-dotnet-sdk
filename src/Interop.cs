@@ -1,6 +1,9 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
+/// <summary>
+/// An umanaged contiguous span of bytes.
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public readonly struct Buffer : IEnumerable<byte>
 {
@@ -13,15 +16,28 @@ public readonly struct Buffer : IEnumerable<byte>
         _length = length;
     }
 
+    /// <summary>
+    /// Gets the length of the Buffer.
+    /// </summary>
     public int Length => _length;
+
+    /// <summary>
+    /// Gets the contents of the Buffer as a Span.
+    /// </summary>
     public unsafe ReadOnlySpan<byte> AsSpan() => new ReadOnlySpan<byte>((void*)_ptr, _length);
 
+    /// <summary>
+    /// Creates a Buffer containing a string, encoding it using UTF-8.
+    /// </summary>
     public static unsafe Buffer FromString(string value)
     {
         var interopString = InteropString.FromString(value);
         return new Buffer(interopString._utf8Ptr, interopString._utf8Length);
     }
 
+    /// <summary>
+    /// Creates a Buffer containing a sequence of bytes.
+    /// </summary>
     public static unsafe Buffer FromBytes(IEnumerable<byte> value)
     {
         // We materialise this so as to get its length and avoid traversing twice,
@@ -34,6 +50,10 @@ public readonly struct Buffer : IEnumerable<byte>
         return new Buffer(mem, exactByteCount);
     }
 
+    /// <summary>
+    /// Gets the contents of the Buffer as a string, interpreting it using
+    /// UTF-8 encoding.
+    /// </summary>
     public string ToUTF8String()
     {
         return Encoding.UTF8.GetString(this.AsSpan());
@@ -42,6 +62,9 @@ public readonly struct Buffer : IEnumerable<byte>
     internal InteropString ToInteropString()
         => new InteropString(_ptr, _length);
 
+    /// <summary>
+    /// Gets an iterator over the bytes in the Buffer.
+    /// </summary>
     public IEnumerator<byte> GetEnumerator() => new Enumerator(_ptr, _length);
     System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
     
@@ -87,13 +110,23 @@ public readonly struct Buffer : IEnumerable<byte>
 
 }
 
+/// <summary>
+/// Convenience methods for decoding optional Buffers.
+/// </summary>
 public static class OptionalBufferExtensions
 {
+    /// <summary>
+    /// Gets whether the option contains any content.
+    /// </summary>
     public static bool HasContent(this Optional<Buffer> buffer)
     {
         return buffer.TryGetValue(out var value) && (value.Length > 0);
     }
 
+    /// <summary>
+    /// Gets the contents of the contained Buffer as a Span.  If the Optional
+    /// is None, the Span is empty.
+    /// </summary>
     public static ReadOnlySpan<byte> AsBytes(this Optional<Buffer> buffer)
     {
         if (buffer.TryGetValue(out var value))
@@ -103,6 +136,10 @@ public static class OptionalBufferExtensions
         return new ReadOnlySpan<byte>(Array.Empty<byte>());
     }
 
+    /// <summary>
+    /// Gets the contents of the contained Buffer as a string.  If the Optional
+    /// is None, the string is empty.
+    /// </summary>
     public static string AsString(this Optional<Buffer> buffer)
     {
         if (buffer.TryGetValue(out var value))
@@ -113,6 +150,9 @@ public static class OptionalBufferExtensions
     }
 }
 
+/// <summary>
+/// An unmanaged struct that may or may not contain a T.
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public readonly struct Optional<T>
     where T: struct
@@ -126,24 +166,43 @@ public readonly struct Optional<T>
         _value = value;
     }
 
+    /// <summary>
+    /// Gets the contents of the Optional, if any.  If the Optional is None, it returns
+    /// false and the out variable is undefined.  If the Optional contains a value,
+    /// returns true and the value is copied into the out variable.
+    /// </summary>
     public bool TryGetValue(out T value)
     {
         value = _value;
         return _isSome != 0;
     }
 
+    /// <summary>
+    /// An Optional representing the absence of a value.
+    /// </summary>
     public static readonly Optional<T> None = default;
 
+    /// <summary>
+    /// Surfaces the Optional as a C# nullable type.
+    /// </summary>
     public static implicit operator T?(Optional<T> opt) =>
         opt._isSome == 0 ? null : opt._value;
 }
 
+/// <summary>
+/// Convenience methods for constructing Optionals.
+/// </summary>
 public static class Optional
 {
-    // Just so the caller doesn't have to specify <T>
+    /// <summary>
+    /// Constructs an Optional containing the specified value.
+    /// </summary>
     public static Optional<T> From<T>(T value) where T: struct => new Optional<T>(value);
 }
 
+/// <summary>
+/// The Wasm Canonical ABI representation of a string.
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public readonly struct InteropString
 {
@@ -156,9 +215,15 @@ public readonly struct InteropString
         _utf8Length = length;
     }
 
+    /// <summary>
+    /// Gets the string represented by the InteropString.
+    /// </summary>
     public override string ToString()
         => Marshal.PtrToStringUTF8(_utf8Ptr, _utf8Length);
 
+    /// <summary>
+    /// Creates the Canonical ABI representation from a .NET string.
+    /// </summary>
     public static unsafe InteropString FromString(string value)
     {
         var exactByteCount = checked(Encoding.UTF8.GetByteCount(value));

@@ -7,19 +7,25 @@ namespace Fermyon.Spin.HelloWorld;
 public static class Handler
 {
     [HttpHandler]
-    public static HttpResponse HandleHttpRequest(HttpRequest request) => request.Url switch
+    public static HttpResponse HandleHttpRequest(HttpRequest request)
     {
-        Warmup.DefaultWarmupUrl => WarmCodePath(request),
-        "/redis" => UseRedis(request),
-        _ => HandleRealRequest(request),
-    };
+        if (request.Url.StartsWith("/outbound"))
+        {
+            return UseOutboundHttp(request);
+        }
+        return request.Url switch
+        {
+            "/redis" => UseRedis(request),
+            _ => EchoRequestInfo(request),
+        };
+    }
 
-    private static HttpResponse HandleRealRequest(HttpRequest request)
+    private static HttpResponse UseOutboundHttp(HttpRequest request)
     {
         var onboundRequest = new HttpRequest
         {
             Method = Fermyon.Spin.Sdk.HttpMethod.Delete,
-            Url = "http://127.0.0.1:3001/hibblebibbdle",
+            Url = "http://127.0.0.1:3001/testingtesting",
             Headers = HttpKeyValues.FromDictionary(new Dictionary<string, string>
             {
                 { "X-Outbound-Test", "From .NET" },
@@ -85,7 +91,7 @@ public static class Handler
         };
     }
 
-    private static HttpResponse WarmCodePath(HttpRequest request)
+    private static HttpResponse EchoRequestInfo(HttpRequest request)
     {
         // Warmup
 

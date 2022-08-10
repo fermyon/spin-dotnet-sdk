@@ -11,8 +11,7 @@ Then, build and run the `hello-world` sample:
 
 ```
 $ cd samples/hello-world
-$ dotnet build
-$ spin up
+$ spin build && spin up --follow-all
 ```
 
 If everything worked, you should see a Spin "serving routes" message:

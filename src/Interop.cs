@@ -13,6 +13,7 @@ public readonly struct Buffer : IEnumerable<byte>
         _length = length;
     }
 
+    public int Length => _length;
     public unsafe ReadOnlySpan<byte> AsSpan() => new ReadOnlySpan<byte>((void*)_ptr, _length);
 
     public static unsafe Buffer FromString(string value)
@@ -90,7 +91,7 @@ public static class OptionalBufferExtensions
 {
     public static bool HasContent(this Optional<Buffer> buffer)
     {
-        return buffer.TryGetValue(out var _);
+        return buffer.TryGetValue(out var value) && (value.Length > 0);
     }
 
     public static ReadOnlySpan<byte> AsBytes(this Optional<Buffer> buffer)

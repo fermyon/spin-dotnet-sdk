@@ -1,7 +1,13 @@
 namespace Fermyon.Spin.Sdk;
 
+/// <summary>
+/// Performs operations on a Redis store.
+/// </summary>
 public static class RedisOutbound
 {
+    /// <summary>
+    /// Gets the value of a key.
+    /// </summary>
     public static Buffer Get(string address, string key)
     {
         var res = new Buffer();
@@ -19,6 +25,9 @@ public static class RedisOutbound
         }
     }
 
+    /// <summary>
+    /// Sets the value of a key. If the key already holds a value, it is overwritten.
+    /// </summary>
     public static void Set(string address, string key, Buffer payload)
     {
         var redisAddress = InteropString.FromString(address);
@@ -35,6 +44,9 @@ public static class RedisOutbound
         }
     }
 
+    /// <summary>
+    /// Publishes a Redis message to the specified channel.
+    /// </summary>
     public static void Publish(string address, string channel, Buffer payload)
     {
         var redisAddress = InteropString.FromString(address);

@@ -16,7 +16,7 @@ public static class Handler
         return request.Url switch
         {
             "/redis" => UseRedis(request),
-            "/pg" => UsePostgres(request),
+            "/pg" => UsePostgresQuery(request),
             "/pgins" => UsePostgresExec(request),
             _ => EchoRequestInfo(request),
         };

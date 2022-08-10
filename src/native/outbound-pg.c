@@ -73,7 +73,7 @@ void outbound_pg_list_u8_free(outbound_pg_list_u8_t *ptr) {
 void outbound_pg_db_value_free(outbound_pg_db_value_t *ptr) {
   switch ((int32_t) ptr->tag) {
     case 11: {
-      outbound_pg_string_free(&ptr->val.db_string);
+      outbound_pg_string_free(&ptr->val.str);
       break;
     }
     case 12: {
@@ -85,7 +85,7 @@ void outbound_pg_db_value_free(outbound_pg_db_value_t *ptr) {
 void outbound_pg_parameter_value_free(outbound_pg_parameter_value_t *ptr) {
   switch ((int32_t) ptr->tag) {
     case 11: {
-      outbound_pg_string_free(&ptr->val.db_string);
+      outbound_pg_string_free(&ptr->val.str);
       break;
     }
     case 12: {

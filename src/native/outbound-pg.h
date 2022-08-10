@@ -45,7 +45,7 @@ extern "C"
   #define OUTBOUND_PG_DB_DATA_TYPE_UINT64 8
   #define OUTBOUND_PG_DB_DATA_TYPE_FLOATING32 9
   #define OUTBOUND_PG_DB_DATA_TYPE_FLOATING64 10
-  #define OUTBOUND_PG_DB_DATA_TYPE_DB_STRING 11
+  #define OUTBOUND_PG_DB_DATA_TYPE_STR 11
   #define OUTBOUND_PG_DB_DATA_TYPE_BINARY 12
   #define OUTBOUND_PG_DB_DATA_TYPE_OTHER 13
   typedef struct {
@@ -72,7 +72,7 @@ extern "C"
       uint64_t uint64;
       float floating32;
       double floating64;
-      outbound_pg_string_t db_string;
+      outbound_pg_string_t str;
       outbound_pg_list_u8_t binary;
     } val;
   } outbound_pg_db_value_t;
@@ -87,7 +87,7 @@ extern "C"
   #define OUTBOUND_PG_DB_VALUE_UINT64 8
   #define OUTBOUND_PG_DB_VALUE_FLOATING32 9
   #define OUTBOUND_PG_DB_VALUE_FLOATING64 10
-  #define OUTBOUND_PG_DB_VALUE_DB_STRING 11
+  #define OUTBOUND_PG_DB_VALUE_STR 11
   #define OUTBOUND_PG_DB_VALUE_BINARY 12
   #define OUTBOUND_PG_DB_VALUE_DB_NULL 13
   #define OUTBOUND_PG_DB_VALUE_UNSUPPORTED 14
@@ -106,7 +106,7 @@ extern "C"
       uint64_t uint64;
       float floating32;
       double floating64;
-      outbound_pg_string_t db_string;
+      outbound_pg_string_t str;
       outbound_pg_list_u8_t binary;
     } val;
   } outbound_pg_parameter_value_t;
@@ -121,7 +121,7 @@ extern "C"
   #define OUTBOUND_PG_PARAMETER_VALUE_UINT64 8
   #define OUTBOUND_PG_PARAMETER_VALUE_FLOATING32 9
   #define OUTBOUND_PG_PARAMETER_VALUE_FLOATING64 10
-  #define OUTBOUND_PG_PARAMETER_VALUE_DB_STRING 11
+  #define OUTBOUND_PG_PARAMETER_VALUE_STR 11
   #define OUTBOUND_PG_PARAMETER_VALUE_BINARY 12
   #define OUTBOUND_PG_PARAMETER_VALUE_DB_NULL 13
   void outbound_pg_parameter_value_free(outbound_pg_parameter_value_t *ptr);

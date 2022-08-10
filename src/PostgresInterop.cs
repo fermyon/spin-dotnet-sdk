@@ -16,7 +16,7 @@ public unsafe readonly struct DbValue {
     internal const byte OUTBOUND_PG_DB_VALUE_UINT64 = 8;
     internal const byte OUTBOUND_PG_DB_VALUE_FLOATING32 = 9;
     internal const byte OUTBOUND_PG_DB_VALUE_FLOATING64 = 10;
-    internal const byte OUTBOUND_PG_DB_VALUE_DB_STRING = 11;
+    internal const byte OUTBOUND_PG_DB_VALUE_STR = 11;
     internal const byte OUTBOUND_PG_DB_VALUE_BINARY = 12;
     internal const byte OUTBOUND_PG_DB_VALUE_DB_NULL = 13;
     internal const byte OUTBOUND_PG_DB_VALUE_UNSUPPORTED = 14;
@@ -46,7 +46,7 @@ public unsafe readonly struct DbValue {
     [FieldOffset(8)]
     internal readonly double floating64;
     [FieldOffset(8)]
-    internal readonly InteropString db_string;
+    internal readonly InteropString str;
     [FieldOffset(8)]
     internal readonly Buffer binary;
 
@@ -65,7 +65,7 @@ public unsafe readonly struct DbValue {
             case OUTBOUND_PG_DB_VALUE_UINT64: return uint64;
             case OUTBOUND_PG_DB_VALUE_FLOATING32: return floating32;
             case OUTBOUND_PG_DB_VALUE_FLOATING64: return floating64;
-            case OUTBOUND_PG_DB_VALUE_DB_STRING: return db_string.ToString();
+            case OUTBOUND_PG_DB_VALUE_STR: return str.ToString();
             case OUTBOUND_PG_DB_VALUE_BINARY: return binary.ToString();
             case OUTBOUND_PG_DB_VALUE_DB_NULL: return null;
             default: throw new InvalidOperationException($"Spin doesn't support type {tag}");
@@ -86,7 +86,7 @@ public unsafe readonly struct ParameterValue {
     internal const byte OUTBOUND_PG_PARAMETER_VALUE_UINT64 = 8;
     internal const byte OUTBOUND_PG_PARAMETER_VALUE_FLOATING32 = 9;
     internal const byte OUTBOUND_PG_PARAMETER_VALUE_FLOATING64 = 10;
-    internal const byte OUTBOUND_PG_PARAMETER_VALUE_DB_STRING = 11;
+    internal const byte OUTBOUND_PG_PARAMETER_VALUE_STR = 11;
     internal const byte OUTBOUND_PG_PARAMETER_VALUE_BINARY = 12;
     internal const byte OUTBOUND_PG_PARAMETER_VALUE_DB_NULL = 13;
 
@@ -134,8 +134,8 @@ public unsafe readonly struct ParameterValue {
 
     public ParameterValue(string value) : this()
     {
-        tag = OUTBOUND_PG_PARAMETER_VALUE_DB_STRING;
-        db_string = InteropString.FromString(value);
+        tag = OUTBOUND_PG_PARAMETER_VALUE_STR;
+        str = InteropString.FromString(value);
     }
 
     public ParameterValue(IEnumerable<byte> value) : this()
@@ -199,7 +199,7 @@ public unsafe readonly struct ParameterValue {
     [FieldOffset(8)]
     internal readonly double floating64;
     [FieldOffset(8)]
-    internal readonly InteropString db_string;
+    internal readonly InteropString str;
     [FieldOffset(8)]
     internal readonly Buffer binary;
 }
@@ -332,7 +332,7 @@ public enum PgDataType : byte
     OUTBOUND_PG_DB_DATA_TYPE_UINT64 = 8,
     OUTBOUND_PG_DB_DATA_TYPE_FLOATING32 = 9,
     OUTBOUND_PG_DB_DATA_TYPE_FLOATING64 = 10,
-    OUTBOUND_PG_DB_DATA_TYPE_DB_STRING = 11,
+    OUTBOUND_PG_DB_DATA_TYPE_STR = 11,
     OUTBOUND_PG_DB_DATA_TYPE_BINARY = 12,
     OUTBOUND_PG_DB_DATA_TYPE_OTHER = 13,
 }

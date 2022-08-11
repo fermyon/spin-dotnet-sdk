@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="{{sdk-path}}/src/build/Fermyon.Spin.Sdk.props" />
+  <Import Project="{{sdk-path}}/src/build/Fermyon.Spin.Sdk.targets" />
+
+  <ItemGroup>
+    <PackageReference Include="Wasi.Sdk" Version="0.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="{{sdk-path}}/src/Fermyon.Spin.Sdk.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <AssemblyName>{{project-name}}</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <PropertyGroup>
+      <UseWizer>true</UseWizer>
+  </PropertyGroup>
+
+</Project>

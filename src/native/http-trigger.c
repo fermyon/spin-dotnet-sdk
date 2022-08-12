@@ -74,26 +74,67 @@ void ensure_preinitialized() {
             return;
         }
 
-        char* warmup_url = "/warmupz";
-        if (attr_obj) {
-            MonoString* warmup_str;
-            if (get_property(attr_obj, "WarmupUrl", (MonoObject**)&warmup_str) == GET_MEMBER_ERR_OK) {
-                warmup_url = mono_wasm_string_get_utf8(warmup_str);
-            }
+        bool do_warmup = true;
+        MonoObject* do_warmup_obj;
+        if (get_property(attr_obj, "SendWarmupRequest", &do_warmup_obj) == GET_MEMBER_ERR_OK) {
+            MonoString* dws = mono_object_to_string(do_warmup_obj, NULL);
+            do_warmup = *(bool*)mono_object_unbox(do_warmup_obj);
         }
 
-        // To warm the interpreter, we need to run the main code path that is going to execute per-request. That way the preinitialized
-        // binary is already ready to go at full speed.
         spin_http_request_t fake_req = {
             .method = SPIN_HTTP_METHOD_GET,
-            .uri = { warmup_url, strlen(warmup_url) },
+            .uri = { "fie", 3 },
             .headers = {.len = 1, .ptr = (spin_http_tuple2_string_string_t[]){{
                 {"key", 3}, {"val", 3}
             }}},
             .body = { .is_some = 1, .val = { (void*)"Hello", 5 } }
         };
-        spin_http_response_t fake_res;
-        spin_http_handle_http_request(&fake_req, &fake_res);
+
+        if (do_warmup) {
+            char* warmup_url = "/warmupz";
+            if (attr_obj) {
+                MonoString* warmup_str;
+                if (get_property(attr_obj, "WarmupUrl", (MonoObject**)&warmup_str) == GET_MEMBER_ERR_OK) {
+                    warmup_url = mono_wasm_string_get_utf8(warmup_str);
+                }
+            }
+
+            // To warm the interpreter, we need to run the main code path that is going to execute per-request. That way the preinitialized
+            // binary is already ready to go at full speed.
+            fake_req.uri.ptr = warmup_url;
+            fake_req.uri.len = strlen(warmup_url);
+            spin_http_response_t fake_res;
+            spin_http_handle_http_request(&fake_req, &fake_res);
+        } else {
+            MonoMethodSignature* signature = mono_method_signature(preinitialized_handler);
+            if (signature == NULL) {
+                preinitialized_error = "Cannot get handler signature to locate fallback warmup method";
+                return;
+            }
+            void* iter = NULL;
+            MonoType* request_type = mono_signature_get_params(signature, &iter);
+            if (request_type == NULL) {
+                preinitialized_error = "Cannot find request type containing fallback warmup method";
+                return;
+            }
+            MonoClass* request_class = mono_type_get_class(request_type);
+            if (request_type == NULL) {
+                preinitialized_error = "Cannot find request class containing fallback warmup method";
+                return;
+            }
+            MonoMethod* warmup_method = mono_class_get_method_from_name(request_class, "DoSdkWarmup", 1);
+            if (request_type == NULL) {
+                preinitialized_error = "Cannot find fallback warmup method on request type";
+                return;
+            }
+            MonoObject* exn;
+            MonoObject* resp = call_clr_request_handler(warmup_method, &fake_req, &exn);
+            // mono_free(resp);  // IF YOU DO THIS IT CRASHES MY ADVICE IS TO NOT DO IT
+            mono_free(warmup_method);
+            mono_free(request_class);
+            mono_free(request_type);
+            mono_free(signature);
+        }
     }
 }
 

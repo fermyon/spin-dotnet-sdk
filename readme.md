@@ -135,5 +135,7 @@ Using Wizer has certain observable impacts:
   number generator_ will be used in all requests!
 
 You can identify if a request is the warmup request because the URL will be `/warmupz`.
-You can override this in the `HttpHandler` attribute.  However, it is not currently possible
-to have Wizer initialise the runtime but omit calling your handler.
+You can override this in the `HttpHandler` attribute.  If you want to have partial warmup
+but not have to process a warmup request, you can set `SendWarmupRequest = false` on the
+attribute; however, this is nowhere near as effective as full warmup in reducing startup
+times.

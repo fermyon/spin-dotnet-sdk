@@ -149,6 +149,19 @@ public struct HttpRequest
         get => _body;
         set => _body = value;
     }
+
+    // This is called instead of the user code if HttpHandlerAttribute.SendWarmupRequest is
+    // false.  It doesn't provide as much speedup as if we are allowed to call the user
+    // code, but it does exercise enough paths in the SDK to make some improvement.
+    private static HttpResponse DoSdkWarmup(HttpRequest r)
+    {
+        return new HttpResponse
+        {
+            StatusCode = HttpStatusCode.OK,
+            Headers = new Dictionary<string, string>(),
+            BodyAsString = "WARMUP TIME\n",
+        };
+    }
 }
 
 /// <summary>

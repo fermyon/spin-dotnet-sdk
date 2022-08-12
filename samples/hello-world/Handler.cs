@@ -16,6 +16,8 @@ public static class Handler
         return request.Url switch
         {
             "/redis" => UseRedis(request),
+            "/pg" => UsePostgresQuery(request),
+            "/pgins" => UsePostgresExec(request),
             _ => EchoRequestInfo(request),
         };
     }
@@ -161,6 +163,54 @@ public static class Handler
         };
     }
 
+    private static HttpResponse UsePostgresQuery(HttpRequest request)
+    {
+        var connectionString = "user=ivan password=pg314159$ dbname=ivantest host=127.0.0.1";
+
+        var result = PostgresOutbound.Query(connectionString, "SELECT * FROM test");
+
+        var responseText = new StringBuilder();
+
+        responseText.AppendLine($"Got {result.Rows.Count} row(s)");
+        responseText.AppendLine($"COL: [{String.Join(" | ", result.Columns.Select(FmtCol))}]");
+
+        string FmtEntry(DbValue v)
+        {
+            return v.Value() switch
+            {
+                null => "<DBNULL>",
+                var val => val.ToString() ?? "<NULL>",
+            };
+        }
+
+        foreach (var row in result.Rows)
+        {
+            responseText.AppendLine($"ROW: [{String.Join(" | ", row.Select(FmtEntry))}]");
+        }
+
+        return new HttpResponse
+        {
+            StatusCode = HttpStatusCode.OK,
+            BodyAsString = responseText.ToString(),
+        };
+    }
+
+    private static HttpResponse UsePostgresExec(HttpRequest request)
+    {
+        var connectionString = "user=ivan password=pg314159$ dbname=ivantest host=127.0.0.1";
+
+        var id = new Random().Next(100000);
+        var result = PostgresOutbound.Execute(connectionString, "INSERT INTO test VALUES ($1, 'something', 'something else')", id);
+
+        var responseText = $"Updates {result} rows\n";
+
+        return new HttpResponse
+        {
+            StatusCode = HttpStatusCode.OK,
+            BodyAsString = responseText,
+        };
+    }
+
     private static string FormatHeadersShort(IReadOnlyDictionary<string, string> headers)
     {
         if (headers.Count == 0)
@@ -168,5 +218,10 @@ public static class Handler
             return "<no headers>";
         }
         return String.Join(" / ", headers.Select(kvp => $"{kvp.Key}={kvp.Value}"));
+    }
+
+    private static string FmtCol(PgColumn c)
+    {
+        return $"{c.Name} ({c.DataType})";
     }
 }

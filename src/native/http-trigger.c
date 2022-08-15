@@ -60,15 +60,16 @@ void __wasm_call_ctors();
 // If wizer is run on this module, these fields will be populated at build time and hence we'll be able
 // to skip loading and initializing the runtime on a per-request basis. But if wizer isn't run, we'll
 // set up the runtime separately for each request.
-const char* preinitialized_error;
-MonoMethod* preinitialized_handler;
-MonoObject* preinitialized_handler_attr;
-int preinitialized_done;
+
+const char* initialization_error;
+MonoMethod* http_handler;
+MonoObject* http_handler_attr;
+int preinitialized;
 
 void process_http_request(spin_http_request_t *req, spin_http_response_t *ret0) {
     MonoObject* exn;
     unsigned long start_time = time_microseconds();
-    MonoObject* call_result = call_clr_request_handler(preinitialized_handler, req, &exn);
+    MonoObject* call_result = call_clr_request_handler(http_handler, req, &exn);
     unsigned long end_time = time_microseconds();
     
     if (exn) {
@@ -98,34 +99,34 @@ void process_http_request(spin_http_request_t *req, spin_http_response_t *ret0) 
     *ret0 = *resp;
 }
 
-void initialise() {
+void initialize() {
     dotnet_wasi_registerbundledassemblies();
     mono_wasm_load_runtime("", 0);
     spin_attach_internal_calls();
 
-    entry_points_err_t entry_points_err = find_entry_points("Fermyon.Spin.Sdk.HttpHandlerAttribute", &preinitialized_handler_attr, &preinitialized_handler);
+    entry_points_err_t entry_points_err = find_entry_points("Fermyon.Spin.Sdk.HttpHandlerAttribute", &http_handler_attr, &http_handler);
     if (entry_points_err) {
         if (entry_points_err == EP_ERR_NO_HANDLER_METHOD) {
-            preinitialized_error = "Assembly does not contain a method with HttpHandlerAttribute";
+            initialization_error = "Assembly does not contain a method with HttpHandlerAttribute";
         } else {
-            preinitialized_error = "Internal error loading HTTP handler";
+            initialization_error = "Internal error loading HTTP handler";
         }
         return;
     }
 }
 
 __attribute__((export_name("wizer.initialize")))
-void preinitialise() {
-    preinitialized_done = 1;
-    initialise();
+void preinitialize() {
+    preinitialized = 1;
+    initialize();
 
     // To warm the interpreter, we need to run the main code path that is going to execute per-request. That way the preinitialized
     // binary is already ready to go at full speed.
 
     char* warmup_url = "/warmupz";
-    if (preinitialized_handler_attr) {
+    if (http_handler_attr) {
         MonoString* warmup_str;
-        if (get_property(preinitialized_handler_attr, "WarmupUrl", (MonoObject**)&warmup_str) == GET_MEMBER_ERR_OK) {
+        if (get_property(http_handler_attr, "WarmupUrl", (MonoObject**)&warmup_str) == GET_MEMBER_ERR_OK) {
             warmup_url = mono_wasm_string_get_utf8(warmup_str);
         }
     }
@@ -145,11 +146,11 @@ void preinitialise() {
 void spin_http_handle_http_request(spin_http_request_t *req, spin_http_response_t *ret0) {
     __wasm_call_ctors();
 
-    if (!preinitialized_done) {
-        initialise();
+    if (!preinitialized) {
+        initialize();
     }
-    if (preinitialized_error) {
-        *ret0 = internal_error(preinitialized_error);
+    if (initialization_error) {
+        *ret0 = internal_error(initialization_error);
         return;
     }
 

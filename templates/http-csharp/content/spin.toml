@@ -11,4 +11,4 @@ source = "bin/Release/net7.0/{{project-name}}.wasm"
 [component.build]
 command = "dotnet build -c Release"
 [component.trigger]
-route = "/..."
+route = "{{http-path}}"

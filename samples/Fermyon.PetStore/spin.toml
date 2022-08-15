@@ -1,0 +1,16 @@
+spin_version = "1"
+authors = ["itowlson <ivan.towlson@fermyon.com>"]
+description = "Where pets store their toys!"
+name = "Fermyon.PetStore"
+version = "1.0.0"
+trigger = { type = "http", base = "/" }
+
+[[component]]
+id = "home"
+source = "Fermyon.PetStore.Home/bin/Release/net7.0/Fermyon.PetStore.Home.wasm"
+files = [{ source = "Fermyon.PetStore.Home/assets", destination = "/assets" }]
+[component.build]
+command = "dotnet build -c Release"
+workdir = "Fermyon.PetStore.Home"
+[component.trigger]
+route = "/"

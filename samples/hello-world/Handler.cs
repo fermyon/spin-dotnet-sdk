@@ -115,6 +115,13 @@ public static class Handler
             "The body was empty\n";
         responseText.AppendLine(bodyInfo);
 
+        if (request.Url != Warmup.DefaultWarmupUrl)
+        {
+            responseText.AppendLine("We now present the contents of a static asset:");
+            responseText.AppendLine(File.ReadAllText("/assets/asset-text.txt"));
+            responseText.AppendLine("We hope you enjoyed it!");
+        }
+
         return new HttpResponse
         {
             StatusCode = HttpStatusCode.OK,

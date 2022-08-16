@@ -14,10 +14,11 @@
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
-    <AssemblyName>Fermyon.PetStore.Home</AssemblyName>
+    <AssemblyName>Fermyon.PetStore.Pets</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  
   <PropertyGroup>
       <UseWizer>true</UseWizer>
   </PropertyGroup>

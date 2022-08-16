@@ -205,9 +205,24 @@ public unsafe readonly struct ParameterValue {
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe readonly struct PgRow : IEnumerable<DbValue> {
+public unsafe readonly struct PgRow : IReadOnlyList<DbValue> {
     internal readonly DbValue* _ptr;
     internal readonly int _len;
+
+    public int Count => _len;
+
+    public DbValue this[int index]
+    {
+        get
+        {
+            if (index < 0 || index >= _len)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+            var ptr = _ptr + index;
+            return *ptr;
+        }
+    }
 
     public IEnumerator<DbValue> GetEnumerator() => new Enumerator(_ptr, _len);
     System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();

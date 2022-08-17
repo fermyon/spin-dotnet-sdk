@@ -170,7 +170,7 @@ public unsafe readonly struct ParameterValue {
             string v => new ParameterValue(v),
             IEnumerable<byte> v => new ParameterValue(v),
             null => new ParameterValue((object?)null),
-            _ => throw new ArgumentException(nameof(value))
+            _ => throw new ArgumentException($"No conversion for type '{value.GetType().FullName}'", nameof(value))
         };
     }
 

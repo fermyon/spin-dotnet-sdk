@@ -137,3 +137,29 @@ Using Wizer has certain observable impacts:
 You can identify if a request is the warmup request because the URL will be `/warmupz`.
 You can override this in the `HttpHandler` attribute.  However, it is not currently possible
 to have Wizer initialise the runtime but omit calling your handler.
+
+If your handler logic doesn't require any external services then you don't need any special
+warmup handling.  Otherwise, you'll need to guard those calls, or skip your real handler
+altogether, e.g.:
+
+```csharp
+[HttpHandler]
+public static HttpResponse HandleHttpRequest(HttpRequest request)
+{
+    if (request.Url == Warmup.DefaultWarmupUrl)
+    {
+        return new HttpResponse
+        {
+            StatusCode = HttpStatusCode.OK,
+            Headers = new Dictionary<string, string>
+            {
+                { "Content-Type", "text/plain" },
+            },
+            BodyAsString = "warmup",
+        };
+    }
+
+    // ... real handler goes here ...
+}
+
+```

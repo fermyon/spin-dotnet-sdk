@@ -30,4 +30,13 @@ public static class PostgresExtensions
             var v => (string)v,
         };
     }
+
+    public static Buffer AsBuffer(this DbValue value)
+    {
+        return value.Value() switch
+        {
+            null => throw new InvalidOperationException("value is null"),
+            var v => (Buffer)v,
+        };
+    }
 }

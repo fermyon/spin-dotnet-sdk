@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="../../../src/build/Fermyon.Spin.Sdk.props" />
+  <Import Project="../../../src/build/Fermyon.Spin.Sdk.targets" />
+
+  <ItemGroup>
+    <PackageReference Include="Wasi.Sdk" Version="0.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Fermyon.PetStore.Common/Fermyon.PetStore.Common.csproj" />
+    <ProjectReference Include="../../../src/Fermyon.Spin.Sdk.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <AssemblyName>Fermyon.PetStore.Pet</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- TODO: Understand why integer parsing fails when eizered -->
+    <UseWizer>false</UseWizer>
+  </PropertyGroup>
+
+</Project>

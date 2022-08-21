@@ -1,14 +1,14 @@
 <html>
 
     <head>
-        <title>Pets</title>
+        <title>{{ name }}</title>
     </head>
 
     <body>
-        <h1>Pets</h1>
+        <h1>{{ name }}</h1>
 
         <div>
-{{ db-table }}
+            <img src="/pet/{{ id }}/picture">
         </div>
 
         <p><a href="/pets/new">Add a new pet</a></p>

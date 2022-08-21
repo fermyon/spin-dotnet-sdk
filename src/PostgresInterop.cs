@@ -66,7 +66,7 @@ public unsafe readonly struct DbValue {
             case OUTBOUND_PG_DB_VALUE_FLOATING32: return floating32;
             case OUTBOUND_PG_DB_VALUE_FLOATING64: return floating64;
             case OUTBOUND_PG_DB_VALUE_STR: return str.ToString();
-            case OUTBOUND_PG_DB_VALUE_BINARY: return binary.ToString();
+            case OUTBOUND_PG_DB_VALUE_BINARY: return binary;
             case OUTBOUND_PG_DB_VALUE_DB_NULL: return null;
             default: throw new InvalidOperationException($"Spin doesn't support type {tag}");
         }
@@ -284,11 +284,24 @@ internal unsafe readonly struct PgError {
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe readonly struct PgRows : IEnumerable<PgRow> {
+public unsafe readonly struct PgRows : IReadOnlyList<PgRow> {
     internal readonly PgRow* _ptr;
     internal readonly int _len;
 
     public int Count => _len;
+
+    public PgRow this[int index]
+    {
+        get
+        {
+            if (index < 0 || index >= _len)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+            var ptr = _ptr + index;
+            return *ptr;
+        }
+    }
 
     public IEnumerator<PgRow> GetEnumerator() => new Enumerator(_ptr, _len);
     System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();

@@ -34,3 +34,13 @@ command = "dotnet build -c Release"
 workdir = "Fermyon.PetStore.NewPet"
 [component.trigger]
 route = "/pets/new"
+
+[[component]]
+id = "pet"
+source = "Fermyon.PetStore.Pet/bin/Release/net7.0/Fermyon.PetStore.Pet.wasm"
+files = [{ source = "Fermyon.PetStore.Pet/assets", destination = "/assets" }]
+[component.build]
+command = "dotnet build -c Release"
+workdir = "Fermyon.PetStore.Pet"
+[component.trigger]
+route = "/pet/..."

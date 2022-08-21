@@ -38,11 +38,11 @@ public static class Handler
 
         if (rows.Count == 0)
         {
-            return "<p>No pets registered - <a href=\"/pets/new\">add one now</a></p?";
+            return "<p>No pets registered.</p?";
         }
         else
         {
-            var trs = rows.Select(r => $"<tr><td><a ref=\"/pet/{r[0].AsInt32()}\">{r[1].AsString()}</a></td></tr>");
+            var trs = rows.Select(r => $"<tr><td><a href=\"/pet/{r[0].AsInt32()}\">{r[1].AsString()}</a></td></tr>");
             var tbody = String.Join("\n", trs);
             var table = $"<table>\n<th>Name</th>\n{tbody}\n</table>";
             return table;

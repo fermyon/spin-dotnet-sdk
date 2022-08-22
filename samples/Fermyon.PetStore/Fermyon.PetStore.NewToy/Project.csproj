@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="../../../src/build/Fermyon.Spin.Sdk.props" />
+  <Import Project="../../../src/build/Fermyon.Spin.Sdk.targets" />
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Wasi.Sdk" Version="0.1.2-preview.10061" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Fermyon.PetStore.Common/Fermyon.PetStore.Common.csproj" />
+    <ProjectReference Include="../../../src/Fermyon.Spin.Sdk.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <AssemblyName>Fermyon.PetStore.NewToy</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- TODO: otherwise errors with "bulk memory support is not enabled" - understand why! -->
+    <UseWizer>false</UseWizer>
+  </PropertyGroup>
+
+</Project>

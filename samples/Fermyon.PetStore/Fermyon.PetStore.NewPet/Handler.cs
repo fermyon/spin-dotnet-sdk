@@ -39,64 +39,9 @@ public static class Handler
         };
     }
 
-    private class NullServiceProvider : IServiceProvider
-    {
-        public object? GetService(Type t)
-        {
-            if (t == typeof(Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Http.Features.FormOptions>))
-            {
-                return new Microsoft.Extensions.Options.OptionsWrapper<Microsoft.AspNetCore.Http.Features.FormOptions>(new Microsoft.AspNetCore.Http.Features.FormOptions());
-            }
-            if (t == typeof(Microsoft.Extensions.DependencyInjection.IServiceScopeFactory))
-            {
-                return new NullServiceScopeFactory(this);
-            }
-            return null;
-        }
-    }
-
-    private class NullServiceScope : Microsoft.Extensions.DependencyInjection.IServiceScope
-    {
-        public NullServiceScope(IServiceProvider sp) { ServiceProvider = sp; }
-        public IServiceProvider ServiceProvider { get; init; }
-        public void Dispose() {}
-    }
-
-    private class NullServiceScopeFactory : Microsoft.Extensions.DependencyInjection.IServiceScopeFactory
-    {
-        private readonly IServiceProvider _sp;
-        public NullServiceScopeFactory(IServiceProvider sp) { _sp = sp; }
-
-        public Microsoft.Extensions.DependencyInjection.IServiceScope CreateScope() =>
-            new NullServiceScope(_sp);
-    }
-
     private static HttpResponse HandleNewPetForm(HttpRequest request)
     {
-        var hd = request.Headers.ToDictionary(
-            kvp => kvp.Key,
-            kvp => new Microsoft.Extensions.Primitives.StringValues(kvp.Value),
-            StringComparer.InvariantCultureIgnoreCase
-        );
-        
-        var requestContext = new WasiServerRequestContext(
-            "POST",
-            request.Url,
-            new HeaderDictionary(hd),
-            new MemoryStream(request.Body.AsBytes().ToArray())
-        );
-        var requestFeatures = new FeatureCollection();
-        requestFeatures[typeof(IHttpRequestFeature)] = requestContext;
-
-        var sp = new NullServiceProvider();
-        var cf = new Microsoft.AspNetCore.Http.DefaultHttpContextFactory(sp);
-        var ctx = cf.Create(requestFeatures);
-
-        // var m = ctx.Request.Method;
-        // var p = ctx.Request.Path;
-        // var fcc = ctx.Request.Form.Count;
-        // var fcfc = ctx.Request.Form.Files.Count;
-        // var s = $"Meth {m} Path {p} Fcount {fcc} Ffilecount {fcfc}";
+        var ctx = FormParser.ParsePostedForm(request);
 
         var name = ctx.Request.Form["submitted-name"].ToString();
         var pictureFile = ctx.Request.Form.Files["submitted-picture"];
@@ -141,22 +86,5 @@ public static class Handler
             },
             BodyAsString = File.ReadAllText("/assets/NewPetCreated.html"),
         };
-    }
-}
-
-internal static class Kludge
-{
-    public static Dictionary<TKey, TElement>? KludgeyKludge<TSource, TKey, TElement>(
-        this IEnumerable<TSource> source,
-        Func<TSource, TKey> keySelector,
-        Func<TSource, TElement> elementSelector,
-        IEqualityComparer<TKey>? comparer
-    ) where TKey : notnull
-    {
-        foreach (TSource element in source)
-        {
-        }
-
-        return null;
     }
 }

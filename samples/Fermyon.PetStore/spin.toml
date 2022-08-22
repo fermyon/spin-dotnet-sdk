@@ -44,3 +44,33 @@ command = "dotnet build -c Release"
 workdir = "Fermyon.PetStore.Pet"
 [component.trigger]
 route = "/pet/..."
+
+[[component]]
+id = "toys"
+source = "Fermyon.PetStore.Toys/bin/Release/net7.0/Fermyon.PetStore.Toys.wasm"
+files = [{ source = "Fermyon.PetStore.Toys/assets", destination = "/assets" }]
+[component.build]
+command = "dotnet build -c Release"
+workdir = "Fermyon.PetStore.Toys"
+[component.trigger]
+route = "/toys"
+
+[[component]]
+id = "new-toy"
+source = "Fermyon.PetStore.NewToy/bin/Release/net7.0/Fermyon.PetStore.NewToy.wasm"
+files = [{ source = "Fermyon.PetStore.NewToy/assets", destination = "/assets" }]
+[component.build]
+command = "dotnet build -c Release"
+workdir = "Fermyon.PetStore.NewToy"
+[component.trigger]
+route = "/toys/new"
+
+[[component]]
+id = "toy"
+source = "Fermyon.PetStore.Toy/bin/Release/net7.0/Fermyon.PetStore.Toy.wasm"
+files = [{ source = "Fermyon.PetStore.Toy/assets", destination = "/assets" }]
+[component.build]
+command = "dotnet build -c Release"
+workdir = "Fermyon.PetStore.Toy"
+[component.trigger]
+route = "/toy/..."

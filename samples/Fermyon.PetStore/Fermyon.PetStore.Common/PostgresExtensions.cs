@@ -39,4 +39,13 @@ public static class PostgresExtensions
             var v => (Buffer)v,
         };
     }
+
+    public static Buffer? AsNullableBuffer(this DbValue value)
+    {
+        return value.Value() switch
+        {
+            null => null,
+            var v => (Buffer)v,
+        };
+    }
 }

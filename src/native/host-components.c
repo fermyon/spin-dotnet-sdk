@@ -15,6 +15,7 @@
 #include "wasi-outbound-http.h"
 #include "outbound-redis.h"
 #include "outbound-pg.h"
+#include "spin-config.h"
 
 void spin_attach_internal_calls()
 {
@@ -26,4 +27,6 @@ void spin_attach_internal_calls()
 
     mono_add_internal_call("Fermyon.Spin.Sdk.OutboundPgInterop::outbound_pg_query", outbound_pg_query);
     mono_add_internal_call("Fermyon.Spin.Sdk.OutboundPgInterop::outbound_pg_execute", outbound_pg_execute);
+
+    mono_add_internal_call("Fermyon.Spin.Sdk.SpinConfigNative::spin_config_get_config", spin_config_get_config);
 }

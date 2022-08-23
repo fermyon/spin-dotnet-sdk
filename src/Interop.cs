@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 /// <summary>
@@ -41,13 +42,14 @@ public readonly struct Buffer : IEnumerable<byte>
     public static unsafe Buffer FromBytes(IEnumerable<byte> value)
     {
         // We materialise this so as to get its length and avoid traversing twice,
-        // but it does seem wasteful.  TODO: better way?
+        // but it does seem wasteful.  TODO: better way?  (Could check for ICollection
+        // and use the Count if present.)
         var source = new Span<byte>(value.ToArray());
         var exactByteCount = source.Length;
-        var mem = Marshal.AllocHGlobal(exactByteCount);
-        var buffer = new Span<byte>((void*)mem, exactByteCount);
+        var mem = Abi.abi_alloc(exactByteCount);
+        var buffer = new Span<byte>(mem, exactByteCount);
         source.CopyTo(buffer);
-        return new Buffer(mem, exactByteCount);
+        return new Buffer((nint)mem, exactByteCount);
     }
 
     /// <summary>
@@ -226,12 +228,27 @@ public readonly struct InteropString
     /// </summary>
     public static unsafe InteropString FromString(string value)
     {
+        // TODO: this allocates twice, once to create the char* buffer, and once to
+        // dup that into the ABI string.  It should be possible to do this in one pass.
         var exactByteCount = checked(Encoding.UTF8.GetByteCount(value));
-        var mem = Marshal.AllocHGlobal(exactByteCount);
-        var buffer = new Span<byte>((void*)mem, exactByteCount);
+        var mem = Marshal.AllocHGlobal(exactByteCount + 1);
+        var buffer = new Span<byte>((void*)mem, exactByteCount + 1);
         int byteCount = Encoding.UTF8.GetBytes(value, buffer);
-        return new InteropString(mem, byteCount);
+        buffer[byteCount] = 0;
+
+        InteropString ret = default;
+        abi_string_dup(ref ret, mem);
+        return ret;
     }
+
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private static extern unsafe void abi_string_dup(ref InteropString ret, nint s);
+}
+
+internal static class Abi
+{
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    internal static extern unsafe void* abi_alloc(int size);
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -248,7 +265,7 @@ public unsafe readonly struct InteropStringList
 
     internal static InteropStringList FromStrings(string[] values)
     {
-        var unmanagedValues = (InteropString*)Marshal.AllocHGlobal(values.Length * sizeof(InteropString));
+        var unmanagedValues = (InteropString*)Abi.abi_alloc(values.Length * sizeof(InteropString));
         var span = new Span<InteropString>(unmanagedValues, values.Length);
         var index = 0;
         foreach (var value in values)
@@ -279,7 +296,7 @@ public unsafe readonly struct InteropList<T> : IEnumerable<T>
     {
         var sourceSpan = new Span<T>(values);
 
-        var unmanagedValues = (T*)Marshal.AllocHGlobal(values.Length * sizeof(T));
+        var unmanagedValues = (T*)Abi.abi_alloc(values.Length * sizeof(T));
         var span = new Span<T>(unmanagedValues, values.Length);
         sourceSpan.CopyTo(span);
         return new InteropList<T>(unmanagedValues, values.Length);

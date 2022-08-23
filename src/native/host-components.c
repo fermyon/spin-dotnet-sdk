@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include <mono-wasi/driver.h>
 #include <mono/metadata/assembly.h>
@@ -16,8 +17,26 @@
 #include "outbound-redis.h"
 #include "outbound-pg.h"
 
+typedef struct {
+    char *ptr;
+    size_t len;
+} abi_string_t;
+
+void* abi_alloc(size_t size) {
+    return realloc(NULL, size);
+}
+
+void abi_string_dup(abi_string_t *ret, const char *s) {
+    ret->len = strlen(s);
+    ret->ptr = realloc(NULL, ret->len);
+    memcpy(ret->ptr, s, ret->len);
+}
+
 void spin_attach_internal_calls()
 {
+    mono_add_internal_call("InteropString::abi_string_dup", abi_string_dup);
+    mono_add_internal_call("Abi::abi_alloc", abi_alloc);
+
     mono_add_internal_call("Fermyon.Spin.Sdk.OutboundHttpInterop::wasi_outbound_http_request", wasi_outbound_http_request);
 
     mono_add_internal_call("Fermyon.Spin.Sdk.OutboundRedisInterop::outbound_redis_get", outbound_redis_get);

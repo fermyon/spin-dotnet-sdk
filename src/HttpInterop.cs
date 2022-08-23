@@ -172,7 +172,7 @@ public unsafe readonly struct HttpKeyValues : IReadOnlyDictionary<string, string
     /// </summary>
     public static HttpKeyValues FromDictionary(IReadOnlyDictionary<string, string> dictionary)
     {
-        var unmanagedValues = (HttpKeyValue*)Marshal.AllocHGlobal(dictionary.Count * sizeof(HttpKeyValue));
+        var unmanagedValues = (HttpKeyValue*)Abi.abi_alloc(dictionary.Count * sizeof(HttpKeyValue));
         var span = new Span<HttpKeyValue>(unmanagedValues, dictionary.Count);
         var index = 0;
         foreach (var (key, value) in dictionary)

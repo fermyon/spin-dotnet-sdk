@@ -20,7 +20,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup>
-    <!-- TODO: Understand why integer parsing fails when eizered -->
+    <!-- TODO: Understand why integer parsing fails when wizered -->
     <UseWizer>false</UseWizer>
   </PropertyGroup>
 

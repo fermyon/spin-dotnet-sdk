@@ -7,7 +7,7 @@
     <body>
         <h1>{{ description }}</h1>
 
-        <p><a href="">{{ owner_name }}</a> has {{ count }} of these.</p>
+        <p><a href="/pet/{{ owner_id }}">{{ owner_name }}</a> has {{ count }} of these.</p>
         <div>
             <img src="/pet/{{ owner_id }}/picture"> loves <img src="/toy/{{ toy_id }}/picture">
         </div>

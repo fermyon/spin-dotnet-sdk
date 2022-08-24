@@ -83,7 +83,8 @@ void process_http_request(spin_http_request_t *req, spin_http_response_t *ret0) 
 
     // Add an HTTP response header giving the timing information
     // This is for debugging only - should be removed for production use
-    char* end_time_header_name = "time-in-dotnet";
+    spin_http_string_t end_time_header_str;
+    spin_http_string_dup(&end_time_header_str, "time-in-dotnet");
     char* end_time_string;
     int end_time_string_len = asprintf(&end_time_string, "%f ms", (end_time - start_time) / 1000.0);
     int num_headers = ++resp->headers.val.len;
@@ -92,7 +93,7 @@ void process_http_request(spin_http_request_t *req, spin_http_response_t *ret0) 
         : malloc(num_headers * sizeof(spin_http_tuple2_string_string_t));
     resp->headers.is_some = 1;
     resp->headers.val.ptr[num_headers - 1] = (spin_http_tuple2_string_string_t){
-        {end_time_header_name, strlen(end_time_header_name)},
+        end_time_header_str, 
         {end_time_string, end_time_string_len}
     };
 

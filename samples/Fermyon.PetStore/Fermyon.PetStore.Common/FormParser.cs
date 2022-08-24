@@ -8,10 +8,8 @@ using Microsoft.AspNetCore.Http.Features;
 using HttpRequest = Fermyon.Spin.Sdk.HttpRequest;
 using HttpResponse = Fermyon.Spin.Sdk.HttpResponse;
 
-namespace Fermyon.PetStore.NewPet;
+namespace Fermyon.PetStore.Common;
 
-// TODO: figure out how to put this in Common.  Right now it causes a WASI memory
-// error and I have yet to figure out why.
 public static class FormParser
 {
     public static HttpContext ParsePostedForm(HttpRequest request)

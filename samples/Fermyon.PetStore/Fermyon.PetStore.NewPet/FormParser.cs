@@ -96,22 +96,3 @@ internal class NullServiceProvider : IServiceProvider
         return null;
     }
 }
-
-// TODO: Again, this seems to tweak memory just enough to avoid a deallocation error.
-// Something is wrong and we need to find out what!
-internal static class Kludge
-{
-    public static Dictionary<TKey, TElement>? KludgeyKludge<TSource, TKey, TElement>(
-        this IEnumerable<TSource> source,
-        Func<TSource, TKey> keySelector,
-        Func<TSource, TElement> elementSelector,
-        IEqualityComparer<TKey>? comparer
-    ) where TKey : notnull
-    {
-        foreach (TSource element in source)
-        {
-        }
-
-        return null;
-    }
-}

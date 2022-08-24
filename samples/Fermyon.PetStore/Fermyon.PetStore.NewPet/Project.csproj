@@ -23,7 +23,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup>
-      <UseWizer>false</UseWizer>
+    <!-- TODO: otherwise fails attempting to use StringComparer.InvariantCultureIgnoreCase -->
+    <UseWizer>false</UseWizer>
   </PropertyGroup>
 
 </Project>

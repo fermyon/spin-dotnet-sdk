@@ -5,6 +5,9 @@ name = "Fermyon.PetStore"
 version = "1.0.0"
 trigger = { type = "http", base = "/" }
 
+[variables]
+pg_conn_str = { required = true }
+
 [[component]]
 id = "home"
 source = "Fermyon.PetStore.Home/bin/Release/net7.0/Fermyon.PetStore.Home.wasm"
@@ -19,6 +22,8 @@ route = "/"
 id = "pets"
 source = "Fermyon.PetStore.Pets/bin/Release/net7.0/Fermyon.PetStore.Pets.wasm"
 files = [{ source = "Fermyon.PetStore.Pets/assets", destination = "/assets" }]
+[component.config]
+pg_conn_str = "{{ pg_conn_str }}"
 [component.build]
 command = "dotnet build -c Release"
 workdir = "Fermyon.PetStore.Pets"
@@ -26,9 +31,11 @@ workdir = "Fermyon.PetStore.Pets"
 route = "/pets"
 
 [[component]]
-id = "new-pet"
+id = "new_pet"
 source = "Fermyon.PetStore.NewPet/bin/Release/net7.0/Fermyon.PetStore.NewPet.wasm"
 files = [{ source = "Fermyon.PetStore.NewPet/assets", destination = "/assets" }]
+[component.config]
+pg_conn_str = "{{ pg_conn_str }}"
 [component.build]
 command = "dotnet build -c Release"
 workdir = "Fermyon.PetStore.NewPet"
@@ -39,6 +46,8 @@ route = "/pets/new"
 id = "pet"
 source = "Fermyon.PetStore.Pet/bin/Release/net7.0/Fermyon.PetStore.Pet.wasm"
 files = [{ source = "Fermyon.PetStore.Pet/assets", destination = "/assets" }]
+[component.config]
+pg_conn_str = "{{ pg_conn_str }}"
 [component.build]
 command = "dotnet build -c Release"
 workdir = "Fermyon.PetStore.Pet"
@@ -49,6 +58,8 @@ route = "/pet/..."
 id = "toys"
 source = "Fermyon.PetStore.Toys/bin/Release/net7.0/Fermyon.PetStore.Toys.wasm"
 files = [{ source = "Fermyon.PetStore.Toys/assets", destination = "/assets" }]
+[component.config]
+pg_conn_str = "{{ pg_conn_str }}"
 [component.build]
 command = "dotnet build -c Release"
 workdir = "Fermyon.PetStore.Toys"
@@ -56,9 +67,11 @@ workdir = "Fermyon.PetStore.Toys"
 route = "/toys"
 
 [[component]]
-id = "new-toy"
+id = "new_toy"
 source = "Fermyon.PetStore.NewToy/bin/Release/net7.0/Fermyon.PetStore.NewToy.wasm"
 files = [{ source = "Fermyon.PetStore.NewToy/assets", destination = "/assets" }]
+[component.config]
+pg_conn_str = "{{ pg_conn_str }}"
 [component.build]
 command = "dotnet build -c Release"
 workdir = "Fermyon.PetStore.NewToy"
@@ -69,6 +82,8 @@ route = "/toys/new"
 id = "toy"
 source = "Fermyon.PetStore.Toy/bin/Release/net7.0/Fermyon.PetStore.Toy.wasm"
 files = [{ source = "Fermyon.PetStore.Toy/assets", destination = "/assets" }]
+[component.config]
+pg_conn_str = "{{ pg_conn_str }}"
 [component.build]
 command = "dotnet build -c Release"
 workdir = "Fermyon.PetStore.Toy"

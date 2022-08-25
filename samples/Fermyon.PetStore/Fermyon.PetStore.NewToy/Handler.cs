@@ -37,7 +37,7 @@ public static class Handler
 
     private static string NewToyFormHtml()
     {
-        var connectionString = "user=ivan password=pg314159$ dbname=ivantest host=127.0.0.1";
+        var connectionString = Configuration.DbConnectionString();
 
         var rows = PostgresOutbound.Query(connectionString, "SELECT id, name FROM pets ORDER BY name").Rows;
         
@@ -81,7 +81,7 @@ public static class Handler
         pictureFile.CopyTo(memStream);
         var pictureData = memStream.ToArray();
 
-        var connectionString = "user=ivan password=pg314159$ dbname=ivantest host=127.0.0.1";
+        var connectionString = Configuration.DbConnectionString();
 
         var maxIdResults = PostgresOutbound.Query(connectionString, "SELECT MAX(id) FROM toys");
         var maxId = maxIdResults.Rows.First()[0].AsNullableInt32();

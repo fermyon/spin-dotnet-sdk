@@ -32,7 +32,7 @@ public static class Handler
 
     private static string DatabaseTableHtml()
     {
-        var connectionString = "user=ivan password=pg314159$ dbname=ivantest host=127.0.0.1";
+        var connectionString = Configuration.DbConnectionString();
 
         var rows = PostgresOutbound.Query(connectionString, "SELECT toys.id, toys.description, toys.count, toys.owner_id, pets.name FROM toys INNER JOIN pets ON pets.id = toys.owner_id ORDER BY toys.description").Rows;
 

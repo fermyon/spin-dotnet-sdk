@@ -63,7 +63,7 @@ public static class Handler
         pictureFile.CopyTo(memStream);
         var pictureData = memStream.ToArray();
 
-        var connectionString = "user=ivan password=pg314159$ dbname=ivantest host=127.0.0.1";
+        var connectionString = Configuration.DbConnectionString();
 
         var maxIdResults = PostgresOutbound.Query(connectionString, "SELECT MAX(id) FROM pets");
         var maxId = maxIdResults.Rows.First()[0].AsNullableInt32();

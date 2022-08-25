@@ -34,7 +34,7 @@ public static class Handler
     {
         if (int.TryParse(idHeader, out var id))
         {
-            var connectionString = "user=ivan password=pg314159$ dbname=ivantest host=127.0.0.1";
+            var connectionString = Configuration.DbConnectionString();
 
             var rows = PostgresOutbound.Query(connectionString, "SELECT toys.id, toys.description, toys.count, toys.owner_id, pets.name FROM toys INNER JOIN pets ON pets.id = toys.owner_id WHERE toys.id = $1", id).Rows;
 
@@ -80,7 +80,7 @@ public static class Handler
     {
         if (int.TryParse(idHeader, out var id))
         {
-            var connectionString = "user=ivan password=pg314159$ dbname=ivantest host=127.0.0.1";
+            var connectionString = Configuration.DbConnectionString();
 
             var rows = PostgresOutbound.Query(connectionString, "SELECT id, picture FROM toys WHERE id = $1", id).Rows;
 

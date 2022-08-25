@@ -145,10 +145,6 @@ void preinitialize() {
 }
 
 void spin_http_handle_http_request(spin_http_request_t *req, spin_http_response_t *ret0) {
-    // TODO: this is also a desperate kludge - otherwise we see failures in
-    // `canonical_abi_free` which I haven't been able to track down.
-    char DUMMY[20];
-
     __wasm_call_ctors();
 
     if (!preinitialized) {

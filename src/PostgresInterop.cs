@@ -3,6 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace Fermyon.Spin.Sdk;
 
+/// <summary>
+/// A value retrieved from a Postgres database.
+/// </summary>
 [StructLayout(LayoutKind.Explicit)]
 public unsafe readonly struct DbValue {
     internal const byte OUTBOUND_PG_DB_VALUE_BOOLEAN = 0;
@@ -50,6 +53,9 @@ public unsafe readonly struct DbValue {
     [FieldOffset(8)]
     internal readonly Buffer binary;
 
+    /// <summary>
+    /// Gets the value as a .NET object.
+    /// </summary>
     public object? Value()
     {
         switch (tag)
@@ -74,7 +80,7 @@ public unsafe readonly struct DbValue {
 }
 
 [StructLayout(LayoutKind.Explicit)]
-public unsafe readonly struct ParameterValue {
+internal unsafe readonly struct ParameterValue {
     internal const byte OUTBOUND_PG_PARAMETER_VALUE_BOOLEAN = 0;
     internal const byte OUTBOUND_PG_PARAMETER_VALUE_INT8 = 1;
     internal const byte OUTBOUND_PG_PARAMETER_VALUE_INT16 = 2;
@@ -204,13 +210,22 @@ public unsafe readonly struct ParameterValue {
     internal readonly Buffer binary;
 }
 
+/// <summary>
+/// A row retrieved from a Postgres database.
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public unsafe readonly struct PgRow : IReadOnlyList<DbValue> {
     internal readonly DbValue* _ptr;
     internal readonly int _len;
 
+    /// <summary>
+    /// The number of columns in the row.
+    /// </summary>
     public int Count => _len;
 
+    /// <summary>
+    /// Gets the value of the column at the specified index.
+    /// </summary>
     public DbValue this[int index]
     {
         get
@@ -224,6 +239,9 @@ public unsafe readonly struct PgRow : IReadOnlyList<DbValue> {
         }
     }
 
+    /// <summary>
+    /// Gets an iterator over the values in the row.
+    /// </summary>
     public IEnumerator<DbValue> GetEnumerator() => new Enumerator(_ptr, _len);
     System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -283,13 +301,22 @@ internal unsafe readonly struct PgError {
     internal readonly InteropString message;
 }
 
+/// <summary>
+/// A list of rows retrieved from a Postgres database.
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public unsafe readonly struct PgRows : IReadOnlyList<PgRow> {
     internal readonly PgRow* _ptr;
     internal readonly int _len;
 
+    /// <summary>
+    /// Gets the number of rows.
+    /// </summary>
     public int Count => _len;
 
+    /// <summary>
+    /// Gets the row at the specified index.
+    /// </summary>
     public PgRow this[int index]
     {
         get
@@ -303,6 +330,9 @@ public unsafe readonly struct PgRows : IReadOnlyList<PgRow> {
         }
     }
 
+    /// <summary>
+    /// Gets an iterator over the rows.
+    /// </summary>
     public IEnumerator<PgRow> GetEnumerator() => new Enumerator(_ptr, _len);
     System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -347,40 +377,103 @@ public unsafe readonly struct PgRows : IReadOnlyList<PgRow> {
     }
 }
 
+/// <summary>
+/// The data type of a Postgres column.
+/// </summary>
 public enum PgDataType : byte
 {
+    /// <summary>
+    /// Boolean data type.
+    /// </summary>
     OUTBOUND_PG_DB_DATA_TYPE_BOOLEAN = 0,
+    /// <summary>
+    /// 8-bit signed integer (sbyte) data type.
+    /// </summary>
     OUTBOUND_PG_DB_DATA_TYPE_INT8 = 1,
+    /// <summary>
+    /// 16-bit signed integer (short) data type.
+    /// </summary>
     OUTBOUND_PG_DB_DATA_TYPE_INT16 = 2,
+    /// <summary>
+    /// 32-bit signed integer (int) data type.
+    /// </summary>
     OUTBOUND_PG_DB_DATA_TYPE_INT32 = 3,
+    /// <summary>
+    /// 64-bit signed integer (long) data type.
+    /// </summary>
     OUTBOUND_PG_DB_DATA_TYPE_INT64 = 4,
+    /// <summary>
+    /// 8-bit unsigned integer (byte) data type.
+    /// </summary>
     OUTBOUND_PG_DB_DATA_TYPE_UINT8 = 5,
+    /// <summary>
+    /// 16-bit unsigned integer (ushort) data type.
+    /// </summary>
     OUTBOUND_PG_DB_DATA_TYPE_UINT16 = 6,
+    /// <summary>
+    /// 32-bit unsigned integer (uint) data type.
+    /// </summary>
     OUTBOUND_PG_DB_DATA_TYPE_UINT32 = 7,
+    /// <summary>
+    /// 64-bit unsigned integer (ulong) data type.
+    /// </summary>
     OUTBOUND_PG_DB_DATA_TYPE_UINT64 = 8,
+    /// <summary>
+    /// 32-bit floating point (float) data type.
+    /// </summary>
     OUTBOUND_PG_DB_DATA_TYPE_FLOATING32 = 9,
+    /// <summary>
+    /// 64-bit floating point (double) data type.
+    /// </summary>
     OUTBOUND_PG_DB_DATA_TYPE_FLOATING64 = 10,
+    /// <summary>
+    /// String data type.
+    /// </summary>
     OUTBOUND_PG_DB_DATA_TYPE_STR = 11,
+    /// <summary>
+    /// Binary blob (Buffer) data type.
+    /// </summary>
     OUTBOUND_PG_DB_DATA_TYPE_BINARY = 12,
+    /// <summary>
+    /// Any data type not supported by Spin.
+    /// </summary>
     OUTBOUND_PG_DB_DATA_TYPE_OTHER = 13,
 }
 
+/// <summary>
+/// Column metadata from a Postgres database.
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public unsafe readonly struct PgColumn
 {
     internal readonly InteropString name;
     internal readonly PgDataType data_type;
 
+    /// <summary>
+    /// Gets the name of the column.
+    /// </summary>
     public string Name => name.ToString();
+    /// <summary>
+    /// Gets the data type of the column.
+    /// </summary>
     public PgDataType DataType => data_type;
 }
 
+/// <summary>
+/// The result of a query to a Postgres database.
+/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public unsafe readonly struct PgRowSet {
     internal readonly InteropList<PgColumn> _columns;
     internal readonly PgRows _rows;
 
+    /// <summary>
+    /// Gets the columns retrieved by the query.
+    /// </summary>
     public IEnumerable<PgColumn> Columns => _columns;
+    /// <summary>
+    /// Gets the rows retrieved by the query.
+    /// </summary>
     public PgRows Rows => _rows;
 }
 

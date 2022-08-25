@@ -1,7 +1,13 @@
 namespace Fermyon.Spin.Sdk;
 
+/// <summary>
+/// Performs operations on a Postgres database.
+/// </summary>
 public static class PostgresOutbound
 {
+    /// <summary>
+    /// Performs a query against a Postgres database.
+    /// </summary>
     // TODO: less foul return type like an IDataReader or something
     public static PgRowSet Query(string connectionString, string sql, params object?[] parameters)
     {
@@ -23,6 +29,10 @@ public static class PostgresOutbound
         }
     }
 
+    /// <summary>
+    /// Executes a SQL statement against a Postgres database, and returns the number of rows changed. This
+    /// is for statements that do not return a result set.
+    /// </summary>
     public static long Execute(string connectionString, string sql, params object?[] parameters)
     {
         var conn = InteropString.FromString(connectionString);

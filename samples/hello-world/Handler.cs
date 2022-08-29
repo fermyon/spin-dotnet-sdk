@@ -120,7 +120,18 @@ public static class Handler
         {
             responseText.AppendLine("We now present the contents of a static asset:");
             responseText.AppendLine(File.ReadAllText("/assets/asset-text.txt"));
-            responseText.AppendLine("We hope you enjoyed it!");
+            responseText.AppendLine("And here are some config strings:");
+            responseText.AppendLine($"- 'defaulted' has value {SpinConfig.Get("defaulted")}");
+            try
+            {
+                var requiredCfg = SpinConfig.Get("required");
+                responseText.AppendLine($"- 'required' has value {requiredCfg}");
+            }
+            catch
+            {
+                responseText.AppendLine("- Oh no!  'required' was not set!");
+            }
+            responseText.AppendLine("We hope you enjoyed this external data!");
         }
 
         return new HttpResponse

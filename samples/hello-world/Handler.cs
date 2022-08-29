@@ -27,15 +27,11 @@ public static class Handler
         var onboundRequest = new HttpRequest
         {
             Method = Fermyon.Spin.Sdk.HttpMethod.Delete,
-            Url = "http://127.0.0.1:3001/testingtesting",
+            Url = "http://127.0.0.1:3001/testingtesting?thing=otherthing",
             Headers = HttpKeyValues.FromDictionary(new Dictionary<string, string>
             {
                 { "X-Outbound-Test", "From .NET" },
                 { "Accept", "text/plain" },
-            }),
-            Parameters = HttpKeyValues.FromDictionary(new Dictionary<string, string>
-            {
-                { "myquery", "qqq" },
             }),
             Body = Optional.From(Buffer.FromString("see the little goblin, see his little feet")),
         };
@@ -103,6 +99,11 @@ public static class Handler
         foreach (var h in request.Headers)
         {
             responseText.AppendLine($"Header '{h.Key}' had value '{h.Value}'");
+        }
+
+        if (request.Parameters.Count == 0)
+        {
+            responseText.AppendLine($"Cripes!  There were no query args");
         }
 
         foreach (var p in request.Parameters)

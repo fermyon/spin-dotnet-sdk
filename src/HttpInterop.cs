@@ -133,12 +133,11 @@ public struct HttpRequest
     }
 
     /// <summary>
-    /// Gets or sets the request query parameters.
+    /// Gets the request query parameters.
     /// </summary>
     public IReadOnlyDictionary<string, string> Parameters
     {
         get => _parameters;
-        set => _parameters = HttpKeyValues.FromDictionary(value);
     }
 
     /// <summary>

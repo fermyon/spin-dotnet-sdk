@@ -1,0 +1,18 @@
+<html>
+
+    <head>
+        <title>{{ description }}</title>
+    </head>
+
+    <body>
+        <h1>{{ description }}</h1>
+
+        <p><a href="/pet/{{ owner_id }}">{{ owner_name }}</a> has {{ count }} of these.</p>
+        <div>
+            <img src="/pet/{{ owner_id }}/picture"> loves <img src="/toy/{{ toy_id }}/picture">
+        </div>
+
+        <p><a href="/toys/new">Add a new toy</a></p>
+    </body>
+
+</html>

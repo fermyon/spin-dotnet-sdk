@@ -235,7 +235,7 @@ public readonly struct InteropString
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe readonly struct InteropStringList
+internal unsafe readonly struct InteropStringList
 {
     private readonly InteropString* _ptr;
     private readonly int _len;
@@ -261,7 +261,7 @@ public unsafe readonly struct InteropStringList
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe readonly struct InteropList<T> : IEnumerable<T>
+internal unsafe readonly struct InteropList<T> : IEnumerable<T>
     where T: unmanaged
 {
     internal readonly T* _ptr;

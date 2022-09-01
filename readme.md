@@ -13,16 +13,15 @@ An experimental preview SDK for building Spin application components using .NET.
 
 You'll need the following to build Spin applications using this SDK:
 
+- [Spin](https://spin.fermyon.dev)
 - [.NET 7 Preview 5](https://dotnet.microsoft.com/en-us/download/dotnet/7.0)
-- [Experimental .NET WASI SDK](https://github.com/steveSandersonMS/dotnet-wasi-sdk/)
-- [The WASI SDK](https://github.com/WebAssembly/wasi-sdk)
 - This SDK - currently you have to clone it and build from source
 - [Rust](https://www.rust-lang.org/tools/install) - needed for `make bootstrap`
 - Wizer (`make bootstrap`)
 
 To extend the SDK you also need `wit-bindgen` (which is also installed by `make bootstrap`).
 
-### Building the sample application
+### Building the "hello world" sample
 
 To build and run the `hello-world` sample:
 
@@ -56,6 +55,31 @@ Header 'host' had value '127.0.0.1:3000'
 Header 'spin-component-route' had value ''
 The body was empty
 ```
+
+### Building the Postgres sample
+
+`samples/Fermyon.PetStore` includes a sample (very basic) database-backed
+application using Postgres. Before running the sample, you must:
+
+* Create a Postgres database contain the tables in the `sql` directory
+* Set the `SPIN_APP_PG_CONN_STR` environment variable to the connection string for the database.
+  The connection string is in space-separated format e.g. `user=foo password=bar dbname=test host=127.0.0.1`
+
+### Installing the Spin application template
+
+The SDK includes a Spin template for C# projects.  To install it, run:
+
+```
+spin templates install --git https://github.com/fermyon/spin-dotnet-sdk
+```
+
+You can then run `spin new http-csharp <project-name>` to create a new Spin C# application.
+
+> Because the SDK currently only supports building from source, you'll be prompted for
+> the path to where you cloned the SDK. This must be a relative path from the directory
+> _where the application will be created._ For example, if you cloned the SDK
+> into `~/git/spin-dotnet-sdk`, and your application is being created in
+> `~/work/spin-csharp`, you'd pass `../../git/spin-dotnet-sdk`.
 
 ### Handling HTTP requests
 
@@ -98,12 +122,33 @@ in the `hello-world` sample.
 To make outbound Redis requests, use the methods of the `RedisOutbound` class -
 `Get`, `Set` and `Publish`.
 
-For example of making Redis requests, see the `UseRedis` method
+For examples of making Redis requests, see the `UseRedis` method
 in the `hello-world` sample.
+
+### Working with Postgres
+
+To access Postgres databases, use the methods of the `PostgresOutbound` class -
+`Query` for statements that return database values (`SELECT`), and `Execute`
+for statements that modify the database (`INSERT`, `UPDATE`, `DELETE`).
+
+For examples of making Postgres requests, see the `UsePostgresQuery` and
+`UsePostgresExec` methods in the `hello-world` sample, or see the
+`Fermyon.PetStore` sample.
+
+### Accessing Spin configuration
+
+To access Spin configuration, use the `SpinConfig.Get()` method.
+
+> It is not expected that a Spin component will try to access config entries
+> that don't exist. At the moment, the only way to detect if a config setting
+> is missing is to catch the exception from `Get`.
+
+For examples of accessing configuration, see the samples.
 
 ### Working with Buffers
 
-Both HTTP and Redis represent payload blobs using the `Buffer` type. Buffer represents
+Both HTTP and Redis represent payload blobs using the `Buffer` type, and Postgres also
+uses `Buffer` for values of `binary` (aka 'blob') type. Buffer represents
 an unmanaged span of Wasm linear memory.  The SDK provides several convenience methods
 to make it easier to work with.  For example:
 
@@ -161,5 +206,24 @@ public static HttpResponse HandleHttpRequest(HttpRequest request)
 
     // ... real handler goes here ...
 }
-
 ```
+
+## Known issues
+
+The Spin .NET SDK is a preview, built on an implementation of .NET that is currently experimental.
+There are several known issues, of which the most severe are:
+
+* Some static methods and properties cause a "indirect call type mismatch" error when Wizer is turned
+  on - we have seen this on numeric parse methods and `StringComparer` properties.
+  You can work around this by turning Wizer off for affected modules.
+* In some cases, unhandled exceptionc also cause "indirect call type mismatch" instead of being
+  returned as 500 Internal Server Error responses. You can work around this by catching problematic
+  exceptions and returning error responses manually.
+
+You can track issues or report problems at https://github.com/fermyon/spin-dotnet-sdk/issues.
+
+## What's next
+
+The initial version of the SDK closely mirrors the underlying low-level Spin interop interfaces.
+This maximises performance but doesn't provide a very idiomatic experience for .NET developers.
+We'll be aiming to improve that over future releases, and welcome contributions or suggestions!

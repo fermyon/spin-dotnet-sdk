@@ -1,11 +1,12 @@
 # Spin SDK for .NET Preview
 
-An experimental preview SDK for building Spin application components using .NET.
+An experimental SDK for building Spin application components using .NET.
 
 ### Features
 
 * Handle HTTP requests using the Spin executor
 * Make outbound HTTP requests
+* Access Postgres databases
 * Make outbound Redis calls
 * Fast startup by preparing the .NET runtime during Wasm compilation (via Wizer)
 
@@ -14,12 +15,10 @@ An experimental preview SDK for building Spin application components using .NET.
 You'll need the following to build Spin applications using this SDK:
 
 - [Spin](https://spin.fermyon.dev)
-- [.NET 7 Preview 5](https://dotnet.microsoft.com/en-us/download/dotnet/7.0)
-- This SDK - currently you have to clone it and build from source
-- [Rust](https://www.rust-lang.org/tools/install) - needed for `make bootstrap`
-- Wizer (`make bootstrap`)
-
-To extend the SDK you also need `wit-bindgen` (which is also installed by `make bootstrap`).
+- [.NET 7 Preview 5 or above](https://dotnet.microsoft.com/en-us/download/dotnet/7.0)
+- [This SDK](https://github.com/fermyon/spin-dotnet-sdk) - currently you have to clone it and build from source
+- [Wizer](https://github.com/bytecodealliance/wizer/releases) - download and place it on your PATH
+  - If you have Rust installed, you can install Wizer by running `make bootstrap` in the root of the SDK repo
 
 ### Building the "hello world" sample
 
@@ -61,7 +60,7 @@ The body was empty
 `samples/Fermyon.PetStore` includes a sample (very basic) database-backed
 application using Postgres. Before running the sample, you must:
 
-* Create a Postgres database contain the tables in the `sql` directory
+* Create a Postgres database containing the tables in the `sql` directory
 * Set the `SPIN_APP_PG_CONN_STR` environment variable to the connection string for the database.
   The connection string is in space-separated format e.g. `user=foo password=bar dbname=test host=127.0.0.1`
 
@@ -169,6 +168,9 @@ the state of your Wasm module at the end of the request.  This means that the re
 Wasm module contains the .NET runtime in a state where it is already loaded (and the
 interpreter has already seen your code), saving startup time when a request comes in at runtime.
 
+> You must run install [Wizer](https://github.com/bytecodealliance/wizer/releases) and place
+> it on your path (or run `make bootstrap`).
+
 Using Wizer has certain observable impacts:
 
 * You should not (and in some cases cannot) call external services from the warmup request
@@ -215,7 +217,8 @@ There are several known issues, of which the most severe are:
 
 * Some static methods and properties cause a "indirect call type mismatch" error when Wizer is turned
   on - we have seen this on numeric parse methods and `StringComparer` properties.
-  You can work around this by turning Wizer off for affected modules.
+  You can work around this by turning Wizer off for affected modules. To do this, change
+  `<UseWizer>true</UseWizer>` in the `.csproj` to `<UseWizer>false</UseWizer>`.
 * In some cases, unhandled exceptionc also cause "indirect call type mismatch" instead of being
   returned as 500 Internal Server Error responses. You can work around this by catching problematic
   exceptions and returning error responses manually.
@@ -225,5 +228,5 @@ You can track issues or report problems at https://github.com/fermyon/spin-dotne
 ## What's next
 
 The initial version of the SDK closely mirrors the underlying low-level Spin interop interfaces.
-This maximises performance but doesn't provide a very idiomatic experience for .NET developers.
+This maximises performance but doesn't provide an idiomatic experience for .NET developers.
 We'll be aiming to improve that over future releases, and welcome contributions or suggestions!

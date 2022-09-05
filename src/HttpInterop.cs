@@ -102,7 +102,7 @@ public struct HttpRequest
     private HttpMethod _method;
     private InteropString _url;
     private HttpKeyValues _headers;
-    private HttpKeyValues _parameters;
+    private HttpKeyValues _parameters_unused;
     private Optional<Buffer> _body;
 
     /// <summary>
@@ -130,14 +130,6 @@ public struct HttpRequest
     {
         get => _headers;
         set => _headers = HttpKeyValues.FromDictionary(value);
-    }
-
-    /// <summary>
-    /// Gets the request query parameters.
-    /// </summary>
-    public IReadOnlyDictionary<string, string> Parameters
-    {
-        get => _parameters;
     }
 
     /// <summary>

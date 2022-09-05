@@ -64,9 +64,11 @@ public static class Handler
             responseText.AppendLine($"Header '{h.Key}' had value '{h.Value}'");
         }
 
-        foreach (var p in request.Parameters)
+        var uri = new System.Uri(request.Headers["spin-full-url"]);
+        var queryParameters = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        foreach (var key in queryParameters.AllKeys)
         {
-            responseText.AppendLine($"Parameter '{p.Key}' had value '{p.Value}'");
+            responseText.AppendLine($"Parameter '{key}' had value '{queryParameters[key]}'");
         }
 
         var bodyInfo = request.Body.HasContent() ?
@@ -101,14 +103,11 @@ public static class Handler
             responseText.AppendLine($"Header '{h.Key}' had value '{h.Value}'");
         }
 
-        if (request.Parameters.Count == 0)
+        var uri = new System.Uri(request.Headers["spin-full-url"]);
+        var queryParameters = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        foreach (var key in queryParameters.AllKeys)
         {
-            responseText.AppendLine($"Cripes!  There were no query args");
-        }
-
-        foreach (var p in request.Parameters)
-        {
-            responseText.AppendLine($"Parameter '{p.Key}' had value '{p.Value}'");
+            responseText.AppendLine($"Parameter '{key}' had value '{queryParameters[key]}'");
         }
 
         var bodyInfo = request.Body.HasContent() ?

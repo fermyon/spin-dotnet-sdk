@@ -6,7 +6,7 @@ version = "1.0.0"
 trigger = { type = "http", base = "{{http-base}}" }
 
 [[component]]
-id = "{{project-name | kebab_case}}"
+id = "{{project-name | snake_case}}"
 source = "bin/Release/net7.0/{{project-name}}.wasm"
 [component.build]
 command = "dotnet build -c Release"

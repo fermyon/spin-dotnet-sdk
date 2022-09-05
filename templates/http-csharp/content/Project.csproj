@@ -1,14 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="{{sdk-path}}/src/build/Fermyon.Spin.Sdk.props" />
-  <Import Project="{{sdk-path}}/src/build/Fermyon.Spin.Sdk.targets" />
-
   <ItemGroup>
     <PackageReference Include="Wasi.Sdk" Version="0.1.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="{{sdk-path}}/src/Fermyon.Spin.Sdk.csproj" />
+    <PackageReference Include="Fermyon.Spin.Sdk" Version="0.1.0-alpha2" />
   </ItemGroup>
 
   <PropertyGroup>

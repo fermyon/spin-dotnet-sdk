@@ -14,15 +14,19 @@ An experimental SDK for building Spin application components using .NET.
 
 You'll need the following to build Spin applications using this SDK:
 
-- [Spin](https://spin.fermyon.dev)
+- [Spin](https://spin.fermyon.dev) v0.5.0 or above
 - [.NET 7 Preview 5 or above](https://dotnet.microsoft.com/en-us/download/dotnet/7.0)
-- [This SDK](https://github.com/fermyon/spin-dotnet-sdk) - currently you have to clone it and build from source
 - [Wizer](https://github.com/bytecodealliance/wizer/releases) - download and place it on your PATH
   - If you have Rust installed, you can install Wizer by running `make bootstrap` in the root of the SDK repo
 
+### Getting the Spin SDK
+
+You can get the SDK itself from NuGet via `dotnet add package Fermyon.Spin.Sdk --prerelease`, or use
+the provided template - see below for details.
+
 ### Building the "hello world" sample
 
-To build and run the `hello-world` sample:
+To build and run the `hello-world` sample, clone this repo and run:
 
 ```
 $ cd samples/hello-world
@@ -69,16 +73,13 @@ application using Postgres. Before running the sample, you must:
 The SDK includes a Spin template for C# projects.  To install it, run:
 
 ```
-spin templates install --git https://github.com/fermyon/spin-dotnet-sdk
+spin templates install --git https://github.com/fermyon/spin-dotnet-sdk --branch main --update
 ```
 
 You can then run `spin new http-csharp <project-name>` to create a new Spin C# application.
 
-> Because the SDK currently only supports building from source, you'll be prompted for
-> the path to where you cloned the SDK. This must be a relative path from the directory
-> _where the application will be created._ For example, if you cloned the SDK
-> into `~/git/spin-dotnet-sdk`, and your application is being created in
-> `~/work/spin-csharp`, you'd pass `../../git/spin-dotnet-sdk`.
+> If you're creating a project without using the Spin template, add a reference the Spin SDK with the command
+> `dotnet add package Fermyon.Spin.Sdk --prerelease`
 
 ### Handling HTTP requests
 

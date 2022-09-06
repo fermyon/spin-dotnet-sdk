@@ -1,11 +1,12 @@
 # Spin SDK for .NET Preview
 
-An experimental preview SDK for building Spin application components using .NET.
+An experimental SDK for building Spin application components using .NET.
 
 ### Features
 
 * Handle HTTP requests using the Spin executor
 * Make outbound HTTP requests
+* Access Postgres databases
 * Make outbound Redis calls
 * Fast startup by preparing the .NET runtime during Wasm compilation (via Wizer)
 
@@ -13,18 +14,19 @@ An experimental preview SDK for building Spin application components using .NET.
 
 You'll need the following to build Spin applications using this SDK:
 
-- [.NET 7 Preview 5](https://dotnet.microsoft.com/en-us/download/dotnet/7.0)
-- [Experimental .NET WASI SDK](https://github.com/steveSandersonMS/dotnet-wasi-sdk/)
-- [The WASI SDK](https://github.com/WebAssembly/wasi-sdk)
-- This SDK - currently you have to clone it and build from source
-- [Rust](https://www.rust-lang.org/tools/install) - needed for `make bootstrap`
-- Wizer (`make bootstrap`)
+- [Spin](https://spin.fermyon.dev) v0.5.0 or above
+- [.NET 7 Preview 5 or above](https://dotnet.microsoft.com/en-us/download/dotnet/7.0)
+- [Wizer](https://github.com/bytecodealliance/wizer/releases) - download and place it on your PATH
+  - If you have Rust installed, you can install Wizer by running `make bootstrap` in the root of the SDK repo
 
-To extend the SDK you also need `wit-bindgen` (which is also installed by `make bootstrap`).
+### Getting the Spin SDK
 
-### Building the sample application
+You can get the SDK itself from NuGet via `dotnet add package Fermyon.Spin.Sdk --prerelease`, or use
+the provided template - see below for details.
 
-To build and run the `hello-world` sample:
+### Building the "hello world" sample
+
+To build and run the `hello-world` sample, clone this repo and run:
 
 ```
 $ cd samples/hello-world
@@ -56,6 +58,19 @@ Header 'host' had value '127.0.0.1:3000'
 Header 'spin-component-route' had value ''
 The body was empty
 ```
+
+### Installing the Spin application template
+
+The SDK includes a Spin template for C# projects.  To install it, run:
+
+```
+spin templates install --git https://github.com/fermyon/spin-dotnet-sdk --branch main --update
+```
+
+You can then run `spin new http-csharp <project-name>` to create a new Spin C# application.
+
+> If you're creating a project without using the Spin template, add a reference the Spin SDK with the command
+> `dotnet add package Fermyon.Spin.Sdk --prerelease`
 
 ### Handling HTTP requests
 
@@ -98,12 +113,33 @@ in the `hello-world` sample.
 To make outbound Redis requests, use the methods of the `RedisOutbound` class -
 `Get`, `Set` and `Publish`.
 
-For example of making Redis requests, see the `UseRedis` method
+For examples of making Redis requests, see the `UseRedis` method
 in the `hello-world` sample.
+
+### Working with Postgres
+
+To access Postgres databases, use the methods of the `PostgresOutbound` class -
+`Query` for statements that return database values (`SELECT`), and `Execute`
+for statements that modify the database (`INSERT`, `UPDATE`, `DELETE`).
+
+For examples of making Postgres requests, see the `UsePostgresQuery` and
+`UsePostgresExec` methods in the `hello-world` sample, or see the
+`Fermyon.PetStore` sample.
+
+### Accessing Spin configuration
+
+To access Spin configuration, use the `SpinConfig.Get()` method.
+
+> It is not expected that a Spin component will try to access config entries
+> that don't exist. At the moment, the only way to detect if a config setting
+> is missing is to catch the exception from `Get`.
+
+For examples of accessing configuration, see the samples.
 
 ### Working with Buffers
 
-Both HTTP and Redis represent payload blobs using the `Buffer` type. Buffer represents
+Both HTTP and Redis represent payload blobs using the `Buffer` type, and Postgres also
+uses `Buffer` for values of `binary` (aka 'blob') type. Buffer represents
 an unmanaged span of Wasm linear memory.  The SDK provides several convenience methods
 to make it easier to work with.  For example:
 
@@ -123,6 +159,9 @@ Wasm file.  Wizer will run a request through your application _at compile time_ 
 the state of your Wasm module at the end of the request.  This means that the resulting
 Wasm module contains the .NET runtime in a state where it is already loaded (and the
 interpreter has already seen your code), saving startup time when a request comes in at runtime.
+
+> You must run install [Wizer](https://github.com/bytecodealliance/wizer/releases) and place
+> it on your path (or run `make bootstrap`).
 
 Using Wizer has certain observable impacts:
 
@@ -161,5 +200,25 @@ public static HttpResponse HandleHttpRequest(HttpRequest request)
 
     // ... real handler goes here ...
 }
-
 ```
+
+## Known issues
+
+The Spin .NET SDK is a preview, built on an implementation of .NET that is currently experimental.
+There are several known issues, of which the most severe are:
+
+* Some static methods and properties cause a "indirect call type mismatch" error when Wizer is turned
+  on - we have seen this on numeric parse methods and `StringComparer` properties.
+  You can work around this by turning Wizer off for affected modules. To do this, change
+  `<UseWizer>true</UseWizer>` in the `.csproj` to `<UseWizer>false</UseWizer>`.
+* In some cases, unhandled exceptionc also cause "indirect call type mismatch" instead of being
+  returned as 500 Internal Server Error responses. You can work around this by catching problematic
+  exceptions and returning error responses manually.
+
+You can track issues or report problems at https://github.com/fermyon/spin-dotnet-sdk/issues.
+
+## What's next
+
+The initial version of the SDK closely mirrors the underlying low-level Spin interop interfaces.
+This maximises performance but doesn't provide an idiomatic experience for .NET developers.
+We'll be aiming to improve that over future releases, and welcome contributions or suggestions!

@@ -59,15 +59,6 @@ Header 'spin-component-route' had value ''
 The body was empty
 ```
 
-### Building the Postgres sample
-
-`samples/Fermyon.PetStore` includes a sample (very basic) database-backed
-application using Postgres. Before running the sample, you must:
-
-* Create a Postgres database containing the tables in the `sql` directory
-* Set the `SPIN_APP_PG_CONN_STR` environment variable to the connection string for the database.
-  The connection string is in space-separated format e.g. `user=foo password=bar dbname=test host=127.0.0.1`
-
 ### Installing the Spin application template
 
 The SDK includes a Spin template for C# projects.  To install it, run:

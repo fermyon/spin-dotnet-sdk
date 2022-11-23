@@ -10,7 +10,7 @@
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
-    <AssemblyName>{{project-name}}</AssemblyName>
+    <AssemblyName>{{project-name | dotted_pascal_case}}</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>

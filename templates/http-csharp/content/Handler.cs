@@ -1,6 +1,6 @@
 ﻿using Fermyon.Spin.Sdk;
 
-namespace {{project-name}};
+namespace {{project-name | dotted_pascal_case}};
 
 public static class Handler
 {

@@ -8,6 +8,6 @@ generate:
 
 .PHONY: bootstrap
 bootstrap:
-	# install the WIT Bindgen version we are currently using in Spin e06c6b1
-	cargo install wit-bindgen-cli --git https://github.com/bytecodealliance/wit-bindgen --rev dde4694aaa6acf9370206527a798ac4ba6a8c5b8 --force
-	cargo install wizer --all-features
+	# install the WIT Bindgen version we are currently using in Spin v0.7.1
+	cargo install wit-bindgen-cli --git https://github.com/bytecodealliance/wit-bindgen --rev cb871cfa1ee460b51eb1d144b175b9aab9c50aba --force
+	cargo install wizer --git https://github.com/bytecodealliance/wizer --rev 04e49c989542f2bf3a112d60fbf88a62cce2d0d0 --all-features --force

@@ -131,13 +131,30 @@ void preinitialize() {
             warmup_url = mono_wasm_string_get_utf8(warmup_str);
         }
     }
+    int warmup_url_len = strlen(warmup_url);
+
+    // supply fake headers that would usually originate from the http trigger
+    // we can't introspect on our own component config so we just make up some values
+    char* fake_host = "127.0.0.1:3000";
+    int fake_host_len = strlen(fake_host);
+    char* warmup_url_full;
+    int warmup_url_full_len = asprintf(&warmup_url_full, "http://%s%s", fake_host, warmup_url);
+    spin_http_headers_t fake_headers = {.len = 10, .ptr = (spin_http_tuple2_string_string_t[]){
+            {{"host", 4}, {fake_host, fake_host_len}},
+            {{"user-agent", 10}, {"wizer", 5}},
+            {{"accept", 6}, {"*/*", 3}},
+            {{"spin-full-url", 13}, {warmup_url_full, warmup_url_full_len}},
+            {{"spin-path-info", 14}, {warmup_url, warmup_url_len}},
+            {{"spin-matched-route", 18}, {"/...", 3}},
+            {{"spin-raw-component-route", 24}, {"/...", 3}},
+            {{"spin-component-route", 20}, {"", 0}},
+            {{"spin-base-path", 14}, {"/", 1}},
+            {{"spin-client-addr", 14}, {fake_host, fake_host_len}}}};
 
     spin_http_request_t fake_req = {
         .method = SPIN_HTTP_METHOD_GET,
-        .uri = { warmup_url, strlen(warmup_url) },
-        .headers = {.len = 1, .ptr = (spin_http_tuple2_string_string_t[]){{
-            {"key", 3}, {"val", 3}
-        }}},
+        .uri = { warmup_url, warmup_url_len },
+        .headers = fake_headers,
         .body = { .is_some = 1, .val = { (void*)"Hello", 5 } }
     };
     spin_http_response_t fake_res;

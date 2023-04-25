@@ -76,7 +76,7 @@ You can then run `spin new http-csharp <project-name>` to create a new Spin C# a
 
 Your .NET project should contain a method with the `Fermyon.Spin.Sdk.HttpHandler` attribute.
 This method must be `static`, and must take one argument of type `Fermyon.Spin.Sdk.HttpRequest`
-and return a `Fermyon.Spin.Sdk.HttpRequest`.
+and return a `Fermyon.Spin.Sdk.HttpResponse`.
 
 ```csharp
 using Fermyon.Spin.Sdk;

@@ -15,7 +15,7 @@ An experimental SDK for building Spin application components using .NET.
 You'll need the following to build Spin applications using this SDK:
 
 - [Spin](https://spin.fermyon.dev) v0.5.0 or above
-- [.NET 7 Preview 5 or above](https://dotnet.microsoft.com/en-us/download/dotnet/7.0)
+- [.NET 7+](https://dotnet.microsoft.com/en-us/download/dotnet/7.0)
 - [Wizer](https://github.com/bytecodealliance/wizer/releases) - download and place it on your PATH
   - If you have Rust installed, you can install Wizer by running `make bootstrap` in the root of the SDK repo
 

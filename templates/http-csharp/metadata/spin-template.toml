@@ -5,7 +5,3 @@ description = "HTTP request handler using C# (EXPERIMENTAL)"
 [parameters]
 project-description = { type = "string", prompt = "Project description", default = "" }
 http-path = { type = "string", prompt = "HTTP path", default = "/...", pattern = "^/\\S*$" }
-
-[[custom_filters]]
-name = "dotted_pascal_case"
-wasm = "dotted_pascal_case_filter.wasm"

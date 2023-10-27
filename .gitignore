@@ -4,5 +4,4 @@ obj/
 *.wasm
 .suo
 .vs/
-!templates/**/filters/*.wasm
 **/.spin

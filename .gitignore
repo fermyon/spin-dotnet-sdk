@@ -5,3 +5,4 @@ obj/
 .suo
 .vs/
 !templates/**/filters/*.wasm
+**/.spin

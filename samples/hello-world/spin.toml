@@ -1,21 +1,32 @@
-spin_manifest_version = "1"
+spin_manifest_version = 2
+
+[application]
 name = "dotnet-hello"
-trigger = { type = "http", base = "/" }
 version = "1.0.0"
 
-[variables]
-defaulted = { default = "test value" }
-required = { required = true }
+[variables.defaulted]
+default = "test value"
 
-[[component]]
-id = "hello"
+[variables.required]
+required = true
+
+[[trigger.http]]
+route = "/..."
+component = "hello"
+
+[component.hello]
 source = "bin/Release/net8.0/HelloWorld.Spin.wasm"
-allowed_http_hosts = [ "https://spin.fermyon.dev", "http://127.0.0.1:3001" ]
+allowed_outbound_hosts = [
+  # http requests to this same app
+  "http://127.0.0.1:3000",
+  # requests to postgres
+  "postgres://127.0.0.1:5432",
+  # requests to redis
+  "redis://127.0.0.1:6379"
+]
 files = [{ source = "assets", destination = "/assets" }]
-[component.config]
+[component.hello.variables]
 defaulted = "{{ defaulted }}"
 required = "{{ required }}"
-[component.build]
+[component.hello.build]
 command = "dotnet build -c Release"
-[component.trigger]
-route = "/..."

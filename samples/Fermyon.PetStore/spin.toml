@@ -1,91 +1,106 @@
-spin_manifest_version = "1"
+spin_manifest_version = 2
+
+[application]
 authors = ["itowlson <ivan.towlson@fermyon.com>"]
 description = "Where pets store their toys!"
 name = "Fermyon.PetStore"
 version = "1.0.0"
-trigger = { type = "http", base = "/" }
 
-[variables]
-pg_conn_str = { required = true }
+[variables.pg_conn_str]
+required = true
 
-[[component]]
-id = "home"
+[[trigger.http]]
+route = "/"
+component = "home"
+
+[component.home]
 source = "Fermyon.PetStore.Home/bin/Release/net8.0/Fermyon.PetStore.Home.wasm"
 files = [{ source = "Fermyon.PetStore.Home/assets", destination = "/assets" }]
-[component.build]
+allowed_outbound_hosts = ["http://localhost:3000", "postgres://localhost:5432"]
+[component.home.build]
 command = "dotnet build -c Release"
 workdir = "Fermyon.PetStore.Home"
-[component.trigger]
-route = "/"
 
-[[component]]
-id = "pets"
+[[trigger.http]]
+route = "/pets"
+component = "pets"
+
+[component.pets]
 source = "Fermyon.PetStore.Pets/bin/Release/net8.0/Fermyon.PetStore.Pets.wasm"
 files = [{ source = "Fermyon.PetStore.Pets/assets", destination = "/assets" }]
-[component.config]
+allowed_outbound_hosts = ["http://localhost:3000", "postgres://localhost:5432"]
+[component.pets.variables]
 pg_conn_str = "{{ pg_conn_str }}"
-[component.build]
+[component.pets.build]
 command = "dotnet build -c Release"
 workdir = "Fermyon.PetStore.Pets"
-[component.trigger]
-route = "/pets"
 
-[[component]]
-id = "new_pet"
+[[trigger.http]]
+route = "/pets/new"
+component = "new-pet"
+
+[component.new-pet]
 source = "Fermyon.PetStore.NewPet/bin/Release/net8.0/Fermyon.PetStore.NewPet.wasm"
 files = [{ source = "Fermyon.PetStore.NewPet/assets", destination = "/assets" }]
-[component.config]
+allowed_outbound_hosts = ["http://localhost:3000", "postgres://localhost:5432"]
+[component.new-pet.variables]
 pg_conn_str = "{{ pg_conn_str }}"
-[component.build]
+[component.new-pet.build]
 command = "dotnet build -c Release"
 workdir = "Fermyon.PetStore.NewPet"
-[component.trigger]
-route = "/pets/new"
 
-[[component]]
-id = "pet"
+[[trigger.http]]
+route = "/pet/..."
+component = "pet"
+
+[component.pet]
 source = "Fermyon.PetStore.Pet/bin/Release/net8.0/Fermyon.PetStore.Pet.wasm"
 files = [{ source = "Fermyon.PetStore.Pet/assets", destination = "/assets" }]
-[component.config]
+allowed_outbound_hosts = ["http://localhost:3000", "postgres://localhost:5432"]
+[component.pet.variables]
 pg_conn_str = "{{ pg_conn_str }}"
-[component.build]
+[component.pet.build]
 command = "dotnet build -c Release"
 workdir = "Fermyon.PetStore.Pet"
-[component.trigger]
-route = "/pet/..."
 
-[[component]]
-id = "toys"
+[[trigger.http]]
+route = "/toys"
+component = "toys"
+
+[component.toys]
 source = "Fermyon.PetStore.Toys/bin/Release/net8.0/Fermyon.PetStore.Toys.wasm"
 files = [{ source = "Fermyon.PetStore.Toys/assets", destination = "/assets" }]
-[component.config]
+allowed_outbound_hosts = ["http://localhost:3000", "postgres://localhost:5432"]
+[component.toys.variables]
 pg_conn_str = "{{ pg_conn_str }}"
-[component.build]
+[component.toys.build]
 command = "dotnet build -c Release"
 workdir = "Fermyon.PetStore.Toys"
-[component.trigger]
-route = "/toys"
 
-[[component]]
-id = "new_toy"
+[[trigger.http]]
+route = "/toys/new"
+component = "new-toy"
+
+[component.new-toy]
 source = "Fermyon.PetStore.NewToy/bin/Release/net8.0/Fermyon.PetStore.NewToy.wasm"
 files = [{ source = "Fermyon.PetStore.NewToy/assets", destination = "/assets" }]
-[component.config]
+allowed_outbound_hosts = ["http://localhost:3000", "postgres://localhost:5432"]
+[component.new-toy.variables]
 pg_conn_str = "{{ pg_conn_str }}"
-[component.build]
+[component.new-toy.build]
 command = "dotnet build -c Release"
 workdir = "Fermyon.PetStore.NewToy"
-[component.trigger]
-route = "/toys/new"
 
-[[component]]
-id = "toy"
+[[trigger.http]]
+route = "/toy/..."
+component = "toy"
+
+[component.toy]
 source = "Fermyon.PetStore.Toy/bin/Release/net8.0/Fermyon.PetStore.Toy.wasm"
 files = [{ source = "Fermyon.PetStore.Toy/assets", destination = "/assets" }]
-[component.config]
+allowed_outbound_hosts = ["http://localhost:3000", "postgres://localhost:5432"]
+[component.toy.variables]
 pg_conn_str = "{{ pg_conn_str }}"
-[component.build]
+[component.toy.build]
 command = "dotnet build -c Release"
 workdir = "Fermyon.PetStore.Toy"
-[component.trigger]
-route = "/toy/..."

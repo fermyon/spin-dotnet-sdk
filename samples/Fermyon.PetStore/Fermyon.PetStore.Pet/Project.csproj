@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <LangVersion>preview</LangVersion>
     <AssemblyName>Fermyon.PetStore.Pet</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>

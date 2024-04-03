@@ -10,7 +10,7 @@ pg_conn_str = { required = true }
 
 [[component]]
 id = "home"
-source = "Fermyon.PetStore.Home/bin/Release/net7.0/Fermyon.PetStore.Home.wasm"
+source = "Fermyon.PetStore.Home/bin/Release/net8.0/Fermyon.PetStore.Home.wasm"
 files = [{ source = "Fermyon.PetStore.Home/assets", destination = "/assets" }]
 [component.build]
 command = "dotnet build -c Release"
@@ -20,7 +20,7 @@ route = "/"
 
 [[component]]
 id = "pets"
-source = "Fermyon.PetStore.Pets/bin/Release/net7.0/Fermyon.PetStore.Pets.wasm"
+source = "Fermyon.PetStore.Pets/bin/Release/net8.0/Fermyon.PetStore.Pets.wasm"
 files = [{ source = "Fermyon.PetStore.Pets/assets", destination = "/assets" }]
 [component.config]
 pg_conn_str = "{{ pg_conn_str }}"
@@ -32,7 +32,7 @@ route = "/pets"
 
 [[component]]
 id = "new_pet"
-source = "Fermyon.PetStore.NewPet/bin/Release/net7.0/Fermyon.PetStore.NewPet.wasm"
+source = "Fermyon.PetStore.NewPet/bin/Release/net8.0/Fermyon.PetStore.NewPet.wasm"
 files = [{ source = "Fermyon.PetStore.NewPet/assets", destination = "/assets" }]
 [component.config]
 pg_conn_str = "{{ pg_conn_str }}"
@@ -44,7 +44,7 @@ route = "/pets/new"
 
 [[component]]
 id = "pet"
-source = "Fermyon.PetStore.Pet/bin/Release/net7.0/Fermyon.PetStore.Pet.wasm"
+source = "Fermyon.PetStore.Pet/bin/Release/net8.0/Fermyon.PetStore.Pet.wasm"
 files = [{ source = "Fermyon.PetStore.Pet/assets", destination = "/assets" }]
 [component.config]
 pg_conn_str = "{{ pg_conn_str }}"
@@ -56,7 +56,7 @@ route = "/pet/..."
 
 [[component]]
 id = "toys"
-source = "Fermyon.PetStore.Toys/bin/Release/net7.0/Fermyon.PetStore.Toys.wasm"
+source = "Fermyon.PetStore.Toys/bin/Release/net8.0/Fermyon.PetStore.Toys.wasm"
 files = [{ source = "Fermyon.PetStore.Toys/assets", destination = "/assets" }]
 [component.config]
 pg_conn_str = "{{ pg_conn_str }}"
@@ -68,7 +68,7 @@ route = "/toys"
 
 [[component]]
 id = "new_toy"
-source = "Fermyon.PetStore.NewToy/bin/Release/net7.0/Fermyon.PetStore.NewToy.wasm"
+source = "Fermyon.PetStore.NewToy/bin/Release/net8.0/Fermyon.PetStore.NewToy.wasm"
 files = [{ source = "Fermyon.PetStore.NewToy/assets", destination = "/assets" }]
 [component.config]
 pg_conn_str = "{{ pg_conn_str }}"
@@ -80,7 +80,7 @@ route = "/toys/new"
 
 [[component]]
 id = "toy"
-source = "Fermyon.PetStore.Toy/bin/Release/net7.0/Fermyon.PetStore.Toy.wasm"
+source = "Fermyon.PetStore.Toy/bin/Release/net8.0/Fermyon.PetStore.Toy.wasm"
 files = [{ source = "Fermyon.PetStore.Toy/assets", destination = "/assets" }]
 [component.config]
 pg_conn_str = "{{ pg_conn_str }}"

@@ -96,7 +96,7 @@ Your `spin.toml` file should reference the compiled Wasm file built from the pro
 ```toml
 [[component]]
 id = "test"
-source = "bin/Release/net7.0/MyApplication.wasm"
+source = "bin/Release/net8.0/MyApplication.wasm"
 [component.trigger]
 route = "/..."
 ```

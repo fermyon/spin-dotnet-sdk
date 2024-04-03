@@ -9,7 +9,7 @@ required = { required = true }
 
 [[component]]
 id = "hello"
-source = "bin/Release/net7.0/HelloWorld.Spin.wasm"
+source = "bin/Release/net8.0/HelloWorld.Spin.wasm"
 allowed_http_hosts = [ "https://spin.fermyon.dev", "http://127.0.0.1:3001" ]
 files = [{ source = "assets", destination = "/assets" }]
 [component.config]

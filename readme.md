@@ -30,7 +30,7 @@ To build and run the `hello-world` sample, clone this repo and run:
 
 ```
 $ cd samples/hello-world
-$ spin build && spin up --follow-all
+$ spin build --up
 ```
 
 If everything worked, you should see a Spin "serving routes" message:
@@ -67,7 +67,7 @@ The SDK includes a Spin template for C# projects.  To install it, run:
 spin templates install --git https://github.com/fermyon/spin-dotnet-sdk --branch main --update
 ```
 
-You can then run `spin new http-csharp <project-name>` to create a new Spin C# application.
+You can then run `spin new -t http-csharp <project-name>` to create a new Spin C# application.
 
 > If you're creating a project without using the Spin template, add a reference the Spin SDK with the command
 > `dotnet add package Fermyon.Spin.Sdk --prerelease`
@@ -94,11 +94,8 @@ public static class MyHandler
 Your `spin.toml` file should reference the compiled Wasm file built from the project.
 
 ```toml
-[[component]]
-id = "test"
+[component.test]
 source = "bin/Release/net8.0/MyApplication.wasm"
-[component.trigger]
-route = "/..."
 ```
 
 ### Making outbound HTTP requests

@@ -27,7 +27,7 @@ public static class Handler
         var onboundRequest = new HttpRequest
         {
             Method = Fermyon.Spin.Sdk.HttpMethod.Delete,
-            Url = "http://127.0.0.1:3001/testingtesting?thing=otherthing",
+            Url = "http://127.0.0.1:3000/testingtesting?thing=otherthing",
             Headers = HttpKeyValues.FromDictionary(new Dictionary<string, string>
             {
                 { "X-Outbound-Test", "From .NET" },

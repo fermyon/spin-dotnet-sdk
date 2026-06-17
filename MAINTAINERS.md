@@ -9,8 +9,9 @@ _Listed in alphabetical order by first name_
 | Ivan Towlson | itowlson |
 | Joel Dice | dicej |
 | Radu Matei | radu-matei |
-| Vaughn Dice | vdice |
 
 ## Emeritus Maintainers
 
-None
+| Name | GitHub Username |
+| --- | --- |
+| Vaughn Dice | vdice |
